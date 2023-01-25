@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import 'package:neom_commons/core/domain/model/app_profile.dart';
+import 'package:neom_commons/core/domain/model/inbox.dart';
+import 'package:neom_commons/core/utils/app_theme.dart';
+import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
+import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
+import 'package:neom_commons/core/utils/constants/app_translation_constants.dart';
+import 'package:neom_commons/core/utils/constants/url_constants.dart';
+import 'inbox_controller.dart';
+
+class InboxPage extends StatelessWidget {
+  const InboxPage({Key? key}) : super(key: key);
+
+
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<InboxController>(
+      id: AppPageIdConstants.inbox,
+      init: InboxController(),
+      builder: (_) =>
+        Scaffold(
+          extendBodyBehindAppBar: true,
+          body: Container(
+            decoration: AppTheme.appBoxDecoration,
+            child: _.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _.inboxs.isNotEmpty ? ListView.builder(
+                  itemCount: _.sortedInbox.length,
+                  itemBuilder: (context, index) {
+                    Inbox inbox = _.sortedInbox.values.toList().reversed.elementAt(index);
+                    List<AppProfile> profiles = inbox.profiles ?? [];
+                    AppProfile itemmate = profiles.isNotEmpty ? profiles.first : AppProfile();
+                    return GestureDetector(
+                      child: ListTile(
+                        onTap: () =>
+                            Get.toNamed(AppRouteConstants.inboxRoom,
+                                arguments: [inbox]),
+                        leading: itemmate.name.isEmpty ? const CircularProgressIndicator()
+                        : Hero(
+                          tag: itemmate.photoUrl,
+                          child: CircleAvatar(
+                            backgroundImage: NetworkImage(itemmate.photoUrl.isEmpty
+                                ? UrlConstants.noImageUrl : itemmate.photoUrl),
+                          ),
+                        ),
+                        title: itemmate.name.isEmpty ? const LinearProgressIndicator(minHeight: 0.5) : Text(itemmate.name),
+                        subtitle: Text(inbox.lastMessage!.text)
+                      ),
+                      onLongPress: () => {},
+                    );
+                  }
+              ) : Center(child: Text(AppTranslationConstants.noMsgsWereFound.tr)),
+            ),
+          ),
+    );
+  }
+}
