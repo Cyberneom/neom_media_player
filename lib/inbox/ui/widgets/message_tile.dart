@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:neom_commons/core/app_flavour.dart';
 
 import 'package:neom_commons/core/domain/model/inbox_message.dart';
 import 'package:neom_commons/core/ui/widgets/custom_image.dart';
 import 'package:neom_commons/core/utils/app_theme.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
-import 'package:neom_commons/core/utils/constants/url_constants.dart';
 
 class MessageTile extends StatelessWidget {
 
@@ -48,7 +48,7 @@ class MessageTile extends StatelessWidget {
     children: [
       GestureDetector(child: CircleAvatar(
         backgroundImage: CachedNetworkImageProvider(message.profileImgUrl.isEmpty
-            ? UrlConstants.noImageUrl : message.profileImgUrl),
+            ? AppFlavour.getNoImageUrl() : message.profileImgUrl),
         radius: 25.0,
       ),
         onTap: () => Get.offAndToNamed(AppRouteConstants.mateDetails, arguments: message.ownerId),

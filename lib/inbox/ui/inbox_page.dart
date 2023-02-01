@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:neom_commons/core/app_flavour.dart';
 
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
@@ -7,7 +8,6 @@ import 'package:neom_commons/core/utils/app_theme.dart';
 import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_translation_constants.dart';
-import 'package:neom_commons/core/utils/constants/url_constants.dart';
 import 'inbox_controller.dart';
 
 class InboxPage extends StatelessWidget {
@@ -42,7 +42,7 @@ class InboxPage extends StatelessWidget {
                           tag: itemmate.photoUrl,
                           child: CircleAvatar(
                             backgroundImage: NetworkImage(itemmate.photoUrl.isEmpty
-                                ? UrlConstants.noImageUrl : itemmate.photoUrl),
+                                ? AppFlavour.getNoImageUrl() : itemmate.photoUrl),
                           ),
                         ),
                         title: itemmate.name.isEmpty ? const LinearProgressIndicator(minHeight: 0.5) : Text(itemmate.name),

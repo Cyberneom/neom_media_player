@@ -4,7 +4,6 @@ export 'inbox/domain/repository/inbox_repository.dart';
 export 'inbox/domain/use_cases/inbox_room_service.dart';
 export 'inbox/domain/use_cases/inbox_service.dart';
 export 'inbox/inbox_routes.dart';
-export 'inbox/inbox_routes.dart';
 export 'inbox/ui/inbox_controller.dart';
 export 'inbox/ui/inbox_page.dart';
 export 'inbox/ui/inbox_room_controller.dart';
