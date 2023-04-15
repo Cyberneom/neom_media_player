@@ -4,11 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:neom_commons/core/data/api_services/push_notification/firebase_messaging_calls.dart';
 import 'package:neom_commons/core/data/firestore/inbox_firestore.dart';
+import 'package:neom_commons/core/data/firestore/profile_firestore.dart';
 import 'package:neom_commons/core/data/implementations/user_controller.dart';
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
 import 'package:neom_commons/core/domain/model/inbox_message.dart';
 import 'package:neom_commons/core/utils/app_utilities.dart';
+import 'package:neom_commons/core/utils/constants/app_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
 import 'package:neom_commons/core/utils/enums/app_file_from.dart';
 import 'package:neom_commons/core/utils/enums/app_media_type.dart';
@@ -64,7 +66,6 @@ class InboxRoomController extends GetxController implements InboxRoomService {
   set profile(AppProfile profile) => _profile.value = profile;
 
   String inboxRoomId = "";
-
   String profileIds = "";
 
   final RxList<AppProfile> _profiles = <AppProfile>[].obs;
@@ -73,6 +74,7 @@ class InboxRoomController extends GetxController implements InboxRoomService {
 
   bool isLiked = false;
   bool showHeart = false;
+  bool isBot = false;
 
   int totalMessages = 0;
   @override
@@ -90,10 +92,15 @@ class InboxRoomController extends GetxController implements InboxRoomService {
       }
 
       profile = userController.profile;
-      timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-        logger.d("Verifying more Messages");
-        loadMessages(inboxRoomId);
-      });
+      if(inboxRoomId.contains(AppConstants.appBot)) {
+        await loadMessages(inboxRoomId);
+        isBot = true;
+      } else {
+        timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          logger.d("Verifying more Messages");
+          loadMessages(inboxRoomId);
+        });
+      }
     } catch (e) {
        logger.e(e.toString());
     }
@@ -105,25 +112,20 @@ class InboxRoomController extends GetxController implements InboxRoomService {
     logger.d("InboxRoom Controller Ready");
   }
 
-
-
   @override
   FutureOr onClose() {
     timer.cancel();
   }
-
 
   void clear() {
     profile = AppProfile();
     messages = [];
   }
 
-
   @override
   void setMessageText(text) {
     messageText = text;
   }
-
 
   @override
   Future<void> loadMessages(String roomId) async {
@@ -168,7 +170,7 @@ class InboxRoomController extends GetxController implements InboxRoomService {
           if(inboxRoomType == InboxRoomType.profile) {
             String itemmateId = inboxRoomId.replaceAll(profile.id, "");
             itemmateId = itemmateId.replaceAll("_", "");
-            sendPushNotificationToFcm(
+            FirebaseMessagingCalls.sendPrivatePushNotification(
                 toProfileId: itemmateId,
                 fromProfile: profile,
                 notificationType: PushNotificationType.message,
@@ -176,6 +178,16 @@ class InboxRoomController extends GetxController implements InboxRoomService {
                 message: message.text,
                 imgUrl: message.mediaUrl
             );
+
+            // AppProfile mate = await ProfileFirestore().retrieve(itemmateId);
+            // FirebaseMessagingCalls.sendGlobalPushNotification(
+            //     fromProfile: profile,
+            //     toProfile: mate,
+            //     notificationType: PushNotificationType.message,
+            //     referenceId: inboxRoomId,
+            //     message: message.text,
+            //     imgUrl: message.mediaUrl
+            // );
           }
         }
       } catch (e) {

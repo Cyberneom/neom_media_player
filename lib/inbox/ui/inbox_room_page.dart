@@ -68,7 +68,7 @@ class InboxRoomPage extends StatelessWidget {
                     ),
                     ),
                   ),
-                  buildInboxMessageComposer(context, _),
+                  if(!_.isBot) buildInboxMessageComposer(context, _),
               ]
             ),
           ],

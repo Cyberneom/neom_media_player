@@ -6,6 +6,7 @@ import 'package:neom_commons/core/app_flavour.dart';
 import 'package:neom_commons/core/domain/model/inbox_message.dart';
 import 'package:neom_commons/core/ui/widgets/custom_image.dart';
 import 'package:neom_commons/core/utils/app_theme.dart';
+import 'package:neom_commons/core/utils/constants/app_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
 
 class MessageTile extends StatelessWidget {
@@ -51,7 +52,8 @@ class MessageTile extends StatelessWidget {
             ? AppFlavour.getNoImageUrl() : message.profileImgUrl),
         radius: 25.0,
       ),
-        onTap: () => Get.offAndToNamed(AppRouteConstants.mateDetails, arguments: message.ownerId),
+        onTap: () => message.ownerId != AppConstants.appBot
+            ? Get.toNamed(AppRouteConstants.mateDetails, arguments: message.ownerId) : {},
       ),
       Container(
         width: AppTheme.fullWidth(context)*0.75,
