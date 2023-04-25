@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:neom_commons/core/data/api_services/push_notification/firebase_messaging_calls.dart';
 import 'package:neom_commons/core/data/firestore/inbox_firestore.dart';
-import 'package:neom_commons/core/data/firestore/profile_firestore.dart';
 import 'package:neom_commons/core/data/implementations/user_controller.dart';
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
