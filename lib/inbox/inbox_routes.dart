@@ -10,7 +10,7 @@ class InboxRoutes {
     GetPage(
         name: AppRouteConstants.inbox,
         page: () => const InboxPage(),
-        transition: Transition.leftToRight
+        transition: Transition.rightToLeft
     ),
     GetPage(
         name: AppRouteConstants.inboxRoom,

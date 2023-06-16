@@ -201,7 +201,7 @@ class InboxRoomController extends GetxController implements InboxRoomService {
   }
 
   Future<void> handleImage(AppFileFrom appFileFrom) async {
-    await postUploadController.handleImage(appFileFrom, isProfilePicture: true);
+    await postUploadController.handleImage(appFileFrom: appFileFrom, uploadImageType: UploadImageType.profile);
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
   }
 

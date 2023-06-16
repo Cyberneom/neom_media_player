@@ -4,6 +4,7 @@ import 'package:neom_commons/core/app_flavour.dart';
 
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
+import 'package:neom_commons/core/ui/widgets/appbar_child.dart';
 import 'package:neom_commons/core/utils/app_theme.dart';
 import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
@@ -22,6 +23,7 @@ class InboxPage extends StatelessWidget {
       builder: (_) =>
         Scaffold(
           extendBodyBehindAppBar: true,
+          appBar: AppBarChild(title: AppTranslationConstants.inbox.tr),
           body: Container(
             decoration: AppTheme.appBoxDecoration,
             child: _.isLoading
