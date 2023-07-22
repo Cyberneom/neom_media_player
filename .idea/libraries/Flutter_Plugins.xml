@@ -75,6 +75,11 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.6.1" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/share_plus-7.0.2" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/google_maps_flutter_ios-2.2.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_review-2.0.6" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_purchase-3.1.7" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_localization-0.1.12" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_purchase_android-0.3.0+5" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_purchase_storekit-0.3.6+4" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

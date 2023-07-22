@@ -9,6 +9,7 @@ import 'package:neom_commons/core/utils/app_theme.dart';
 import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_translation_constants.dart';
+import 'package:neom_commons/core/utils/enums/app_in_use.dart';
 import 'inbox_controller.dart';
 
 class InboxPage extends StatelessWidget {
@@ -23,7 +24,7 @@ class InboxPage extends StatelessWidget {
       builder: (_) =>
         Scaffold(
           extendBodyBehindAppBar: true,
-          appBar: AppBarChild(title: AppTranslationConstants.inbox.tr),
+          appBar: AppFlavour.appInUse == AppInUse.cyberneom ? null : AppBarChild(title: AppTranslationConstants.inbox.tr),
           body: Container(
             decoration: AppTheme.appBoxDecoration,
             child: _.isLoading
