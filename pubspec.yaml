@@ -1,7 +1,7 @@
 name: neom_inbox
 description: Inbox and Inbox Rooms for Cyberneom.
 version: 1.0.2
-homepage: https://github.com/emmanuel-montoya/neom_inbox
+homepage: https://github.com/Cyberneom/neom_inbox
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:

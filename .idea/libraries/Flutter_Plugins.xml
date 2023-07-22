@@ -46,12 +46,10 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_foundation-2.2.2" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_windows-2.1.6" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/geolocator-9.0.2" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/video_player-2.6.1" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/device_info_plus-8.2.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/url_launcher_windows-3.0.6" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/cloud_firestore-4.8.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_linux-2.1.10" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/audioplayers_web-2.2.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/google_api_headers-1.6.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_cropper_for_web-2.0.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/firebase_storage_web-3.6.2" />
@@ -65,8 +63,6 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.2.1" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/geolocator_android-4.1.7" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/firebase_messaging_web-3.5.2" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/audioplayers-3.0.1" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/awesome_notifications-0.7.4+1" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_for_web-2.1.12" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/geocoding_ios-2.1.0" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/firebase_storage-11.2.2" />
@@ -80,6 +76,10 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_localization-0.1.12" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_purchase_android-0.3.0+5" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/in_app_purchase_storekit-0.3.6+4" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/awesome_notifications-0.7.5-dev.3" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/video_player-2.7.0" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/audioplayers-4.1.0" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/audioplayers_web-3.1.0" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
