@@ -33,12 +33,12 @@ class MessageTile extends StatelessWidget {
       messageWidth = AppTheme.fullWidth(context) * 0.8;
     } else if(message.mediaUrl.isNotEmpty && messageWidth < mediaUrlWidth) {
       messageWidth = mediaUrlWidth;
-    } else if(message.text.length >= 5 && message.text.length <= 10) {
+    } else if(message.text.length > 6 && message.text.length < 12) {
       messageWidth = (message.text.length * 13).toDouble();
-    } else if(message.text.length >= 3 && message.text.length < 5) {
+    } else if(message.text.length > 3 && message.text.length <= 6) {
       messageWidth = (message.text.length * 16.5).toDouble();
     } else if(message.text.length == 3) {
-      messageWidth = (message.text.length * 22).toDouble();
+      messageWidth = (message.text.length * 23).toDouble();
     } else if(message.text.length < 3) {
       messageWidth = 50;
     }

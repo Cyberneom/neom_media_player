@@ -101,6 +101,12 @@ class InboxRoomController extends GetxController implements InboxRoomService {
   }
 
   @override
+  void onDelete() {
+    super.onDelete();
+    timer?.cancel();
+  }
+
+  @override
   FutureOr onClose() {
     timer?.cancel();
   }
