@@ -1,6 +1,6 @@
 name: neom_inbox
 description: Inbox and Inbox Rooms for Cyberneom.
-version: 1.0.2
+version: 1.1.0
 homepage: https://github.com/Cyberneom/neom_inbox
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -29,10 +29,11 @@ dependency_overrides:
     path: ../neom_commons
   neom_posts:
     path: ../neom_posts
-  intl: 0.18.1
+  neom_music_player:
+    path: ../neom_music_player
+  http: 1.1.0
+  uuid: 4.1.0
+  logger: 2.0.2+1
+  google_api_headers: 2.0.3
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:

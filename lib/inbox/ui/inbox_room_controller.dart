@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:neom_commons/core/app_flavour.dart';
 import 'package:neom_commons/core/data/api_services/push_notification/firebase_messaging_calls.dart';
 import 'package:neom_commons/core/data/firestore/inbox_firestore.dart';
+import 'package:neom_commons/core/data/firestore/profile_firestore.dart';
 import 'package:neom_commons/core/data/implementations/user_controller.dart';
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
@@ -22,60 +24,37 @@ import '../domain/use_cases/inbox_room_service.dart';
 
 class InboxRoomController extends GetxController implements InboxRoomService {
 
-  var logger = AppUtilities.logger;
-
-  ScrollController scrollController = ScrollController();
   final userController = Get.find<UserController>();
   final postUploadController = Get.put(PostUploadController());
+  final InboxFirestore inboxFirestore = InboxFirestore();
+
+  final ScrollController scrollController = ScrollController();
   final TextEditingController messageController = TextEditingController();
-  final InboxFirestore _inboxFirestore = InboxFirestore();
 
-  late Timer timer;
+  Timer? timer;
 
-  final RxBool _editStatus = false.obs;
-  bool get editStatus => _editStatus.value;
-  set editStatus(bool editStatus) => _editStatus.value = editStatus;
+  final RxBool editStatus = false.obs;
+  final RxString location = "".obs;
+  final RxString messageText = "".obs;
+  final RxBool isLoading = true.obs;
+  final RxBool sendingMessage = false.obs;
+  final RxList<InboxMessage> messages = <InboxMessage>[].obs;
+  final Rx<Inbox> inbox = Inbox().obs;
+  final Rx<AppProfile> profile = AppProfile().obs;
+  final RxString mainMateId = "".obs;
+  final Rx<AppProfile> mainMate = AppProfile().obs;
 
-  final RxString _location = "".obs;
-  String get location => _location.value;
-  set location(String location) => _location.value = location;
-
-  final RxString _messageText = "".obs;
-  String get messageText => _messageText.value;
-  set messageText(String message) => _messageText.value = message;
-
-  final RxBool _isLoading = true.obs;
-  bool get isLoading => _isLoading.value;
-  set isLoading(bool isLoading) => _isLoading.value = isLoading;
-
-  final RxBool _sendingMessage = false.obs;
-  bool get sendingMessage => _sendingMessage.value;
-  set sendingMessage(bool sendingMessage) => _sendingMessage.value = sendingMessage;
-
-  final RxList<InboxMessage> _messages = <InboxMessage>[].obs;
-  List<InboxMessage> get messages => _messages;
-  set messages(List<InboxMessage> messages) => _messages.value = messages;
-
-  final Rx<Inbox> _inbox = Inbox().obs;
-  Inbox get inbox => _inbox.value;
-  set inbox(Inbox inbox) => _inbox.value = inbox;
-
-  final Rx<AppProfile> _profile = AppProfile().obs;
-  AppProfile get profile => _profile.value;
-  set profile(AppProfile profile) => _profile.value = profile;
 
   String inboxRoomId = "";
-  String profileIds = "";
 
-  final RxList<AppProfile> _profiles = <AppProfile>[].obs;
-  List<AppProfile> get profiles => _profiles;
-  set profiles(List<AppProfile> profiles) => _profiles.value = profiles;
-
+  List<String> profileIds = [];
+  final RxList<AppProfile> profiles = <AppProfile>[].obs;
   bool isLiked = false;
   bool showHeart = false;
   bool isBot = false;
 
   int totalMessages = 0;
+
   @override
   void onInit() async {
     super.onInit();
@@ -84,146 +63,165 @@ class InboxRoomController extends GetxController implements InboxRoomService {
 
       List<dynamic> arguments  = Get.arguments;
       if (Get.arguments[0] is Inbox) {
-        inbox =  arguments.elementAt(0);
-        inboxRoomId = inbox.id;
+        inbox.value =  arguments.elementAt(0);
+        inboxRoomId = inbox.value.id;
       } else if (Get.arguments[0] is String) {
         inboxRoomId = Get.arguments[0];
       }
 
-      profile = userController.profile;
+      profile.value = userController.profile;
       if(inboxRoomId.contains(AppConstants.appBot)) {
         await loadMessages(inboxRoomId);
         isBot = true;
+        mainMate.value.name = AppConstants.appBot.tr;
+        mainMate.value.photoUrl = AppFlavour.getAppLogoUrl();
       } else {
+        profileIds = inboxRoomId.split("_");
+        if(profileIds.isNotEmpty) {
+          profileIds.removeWhere((id) => id == profile.value.id);
+          if(profileIds.isNotEmpty) {
+            mainMateId.value = profileIds.first;
+            mainMate.value = await ProfileFirestore().retrieve(mainMateId.value);
+          }
+        }
         timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-          logger.d("Verifying more Messages");
+          AppUtilities.logger.t("Verifying more Messages");
           loadMessages(inboxRoomId);
         });
       }
     } catch (e) {
-       logger.e(e.toString());
+       AppUtilities.logger.e(e.toString());
     }
   }
 
   @override
   void onReady() async {
     super.onReady();
-    logger.d("InboxRoom Controller Ready");
+    AppUtilities.logger.t("InboxRoom Controller Ready");
   }
 
   @override
   FutureOr onClose() {
-    timer.cancel();
+    timer?.cancel();
   }
 
   void clear() {
-    profile = AppProfile();
-    messages = [];
+    profile.value = AppProfile();
+    messages.value = [];
   }
 
   @override
   void setMessageText(text) {
-    messageText = text;
+    messageText.value = text;
   }
+
+  ///VERIFY HOW TO USE
+  // Stream<List<InboxMessage>> getMessages(String roomId) async* {
+  //   while (true) {
+  //     yield await _inboxFirestore.retrieveMessages(roomId);
+  //     await Future.delayed(const Duration(seconds: 2));
+  //   }
+  // }
 
   @override
   Future<void> loadMessages(String roomId) async {
-    logger.d("$inboxRoomId Retrieving messages");
+    AppUtilities.logger.t("Retrieving messages for room $inboxRoomId");
 
     try {
-      messages = await _inboxFirestore.retrieveMessages(roomId);
+      messages.value = await inboxFirestore.retrieveMessages(roomId);
     } catch (e) {
-      logger.e(e.toString());
+      AppUtilities.logger.e(e.toString());
     }
 
-    logger.d("Retrieving ${messages.length} messages");
-    isLoading = false;
+    AppUtilities.logger.t("Retrieving ${messages.length} messages");
+    isLoading.value = false;
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
   }
 
 
   @override
   Future<void> addMessage({InboxRoomType inboxRoomType = InboxRoomType.profile}) async {
-    logger.d("Adding message to inbox room");
+    AppUtilities.logger.t("Adding message to inbox room");
     InboxMessage message;
 
-    sendingMessage = true;
+    sendingMessage.value = true;
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
 
-    if (messageText.isNotEmpty || postUploadController.imageFile.path.isNotEmpty) {
+    bool hasImage = postUploadController.mediaFile.value.path.isNotEmpty;
+
+    if (messageText.isNotEmpty || hasImage) {
       message = InboxMessage(
-          ownerId: profile.id,
-          profileName: profile.name,
-          profileImgUrl: profile.photoUrl,
-          text: messageText,
+          ownerId: profile.value.id,
+          profileName: profile.value.name,
+          profileImgUrl: profile.value.photoUrl,
+          text: messageText.value.trim(),
           createdTime: DateTime.now().millisecondsSinceEpoch
       );
 
       try {
-        if(postUploadController.imageFile.path.isNotEmpty) {
+
+        if(hasImage) {
           message.type = AppMediaType.image;
           message.mediaUrl = await postUploadController.handleUploadImage(UploadImageType.message);
         }
 
-        if(await _inboxFirestore.addMessage(inboxRoomId, message, inboxRoomType: inboxRoomType)) {
+        messages.value.add(message);
+
+        if(await inboxFirestore.addMessage(inboxRoomId, message, inboxRoomType: inboxRoomType)) {
           if(inboxRoomType == InboxRoomType.profile) {
-            String itemmateId = inboxRoomId.replaceAll(profile.id, "");
+            String itemmateId = inboxRoomId.replaceAll(profile.value.id, "");
             itemmateId = itemmateId.replaceAll("_", "");
+
             FirebaseMessagingCalls.sendPrivatePushNotification(
                 toProfileId: itemmateId,
-                fromProfile: profile,
+                fromProfile: profile.value,
                 notificationType: PushNotificationType.message,
                 referenceId: inboxRoomId,
                 message: message.text,
                 imgUrl: message.mediaUrl
             );
-
-            // AppProfile mate = await ProfileFirestore().retrieve(itemmateId);
-            // FirebaseMessagingCalls.sendGlobalPushNotification(
-            //     fromProfile: profile,
-            //     toProfile: mate,
-            //     notificationType: PushNotificationType.message,
-            //     referenceId: inboxRoomId,
-            //     message: message.text,
-            //     imgUrl: message.mediaUrl
-            // );
           }
         }
       } catch (e) {
-        logger.e(e.toString());
+        sendingMessage.value = false;
+        AppUtilities.logger.e(e.toString());
       }
 
-      logger.d("");
       clearMessage();
-      sendingMessage = false;
+      sendingMessage.value = false;
       update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
     }
   }
 
   Future<void> handleImage(AppFileFrom appFileFrom) async {
-    await postUploadController.handleImage(appFileFrom: appFileFrom, uploadImageType: UploadImageType.profile);
+    await postUploadController.handleImage(appFileFrom: appFileFrom, uploadImageType: UploadImageType.profile, crop: false);
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
   }
 
-  void clearMessage()  {
-    messageText = "";
+  void clearMessage() {
+    messageText.value = "";
     messageController.clear();
-    postUploadController.clearImage();
+    postUploadController.clearMedia();
+    update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
+  }
+
+  void clearImage() {
+    postUploadController.clearMedia();
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);
   }
 
   bool isLikedMessage(InboxMessage message) {
-    return message.likedProfiles.contains(profile.id);
+    return message.likedProfiles.contains(profile.value.id);
   }
 
   Future<void> handleLikeMessage(InboxMessage message) async {
 
     isLiked = isLikedMessage(message);
 
-    if (await _inboxFirestore.handleLikeMessage(profile.id, message.id, isLiked)) {
+    if (await inboxFirestore.handleLikeMessage(profile.value.id, message.id, isLiked)) {
 
-      isLiked ? message.likedProfiles.remove(profile.id)
-          : message.likedProfiles.add(profile.id);
+      isLiked ? message.likedProfiles.remove(profile.value.id)
+          : message.likedProfiles.add(profile.value.id);
     }
 
     update([AppPageIdConstants.inboxRoom, AppPageIdConstants.bandRoom]);

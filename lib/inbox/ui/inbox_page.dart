@@ -4,7 +4,9 @@ import 'package:neom_commons/core/app_flavour.dart';
 
 import 'package:neom_commons/core/domain/model/app_profile.dart';
 import 'package:neom_commons/core/domain/model/inbox.dart';
+import 'package:neom_commons/core/ui/widgets/app_circular_progress_indicator.dart';
 import 'package:neom_commons/core/ui/widgets/appbar_child.dart';
+import 'package:neom_commons/core/utils/app_color.dart';
 import 'package:neom_commons/core/utils/app_theme.dart';
 import 'package:neom_commons/core/utils/constants/app_page_id_constants.dart';
 import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
@@ -15,7 +17,6 @@ import 'inbox_controller.dart';
 class InboxPage extends StatelessWidget {
   const InboxPage({Key? key}) : super(key: key);
 
-
   @override
   Widget build(BuildContext context) {
     return GetBuilder<InboxController>(
@@ -24,15 +25,16 @@ class InboxPage extends StatelessWidget {
       builder: (_) =>
         Scaffold(
           extendBodyBehindAppBar: true,
-          appBar: AppFlavour.appInUse == AppInUse.cyberneom ? null : AppBarChild(title: AppTranslationConstants.inbox.tr),
+          appBar: AppFlavour.appInUse == AppInUse.c ? null : AppBarChild(title: AppTranslationConstants.inbox.tr),
+          backgroundColor: AppColor.main50,
           body: Container(
             decoration: AppTheme.appBoxDecoration,
-            child: _.isLoading
-              ? const Center(child: CircularProgressIndicator())
+            child: _.isLoading.value
+              ? const AppCircularProgressIndicator()
               : _.inboxs.isNotEmpty ? ListView.builder(
-                  itemCount: _.sortedInbox.length,
+                  itemCount: _.sortedInbox.value.length,
                   itemBuilder: (context, index) {
-                    Inbox inbox = _.sortedInbox.values.toList().reversed.elementAt(index);
+                    Inbox inbox = _.sortedInbox.value.values.toList().reversed.elementAt(index);
                     List<AppProfile> profiles = inbox.profiles ?? [];
                     AppProfile itemmate = profiles.isNotEmpty ? profiles.first : AppProfile();
                     return GestureDetector(

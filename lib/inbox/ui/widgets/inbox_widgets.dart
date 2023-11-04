@@ -16,11 +16,11 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 10.0),
     height: 80.0,
-    color: AppColor.messageComposer,
+    color: AppColor.getMain(),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        (_.postUploadController.imageFile.path.isEmpty) ?
+        (_.postUploadController.mediaFile.value.path.isEmpty || _.sendingMessage.value) ?
         IconButton(
           icon: const Icon(Icons.photo),
           iconSize: 25.0,
@@ -32,9 +32,7 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
             SizedBox(
                 width: 50.0,
                 height: 50.0,
-                child: fileImage(_.postUploadController.croppedImageFile.path.isNotEmpty
-                    ? _.postUploadController.croppedImageFile.path
-                    : _.postUploadController.imageFile.path)
+                child: fileImage(_.postUploadController.mediaFile.value.path)
             ),
             Positioned(
               width: 20,
@@ -44,7 +42,7 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
               child: FloatingActionButton(
                   backgroundColor: Theme.of(context).primaryColorLight,
                   child: const Icon(Icons.close, color: Colors.white70, size: 15),
-                  onPressed:  ()=> _.clearMessage()
+                  onPressed: () => _.clearImage()
               ),
             ),
           ]
@@ -52,11 +50,12 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
         AppTheme.widthSpace10,
         Expanded(
             child: TextField(
-              controller: _.messageController,
+              controller: !_.sendingMessage.value ? _.messageController : TextEditingController(),
+              minLines: 1,
               maxLines: 20,
+              textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 hintText: AppTranslationConstants.writeMessage.tr,
-                contentPadding: const EdgeInsets.only(top: AppTheme.padding20),
                 border: InputBorder.none,
               ),
               onChanged: (text) {
@@ -64,11 +63,12 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
               },
             )
         ),
-        IconButton(
+        _.sendingMessage.value ? const SizedBox(height: 25, width: 25, child: CircularProgressIndicator())
+            : IconButton(
           icon: const Icon(Icons.send),
           iconSize: 25.0,
           color: Theme.of(context).primaryColorLight,
-          onPressed: () => _.sendingMessage ? {} : _.addMessage(inboxRoomType: inboxRoomType),
+          onPressed: () => _.sendingMessage.value ? {} : _.addMessage(inboxRoomType: inboxRoomType),
         ),
       ],
     ),
@@ -83,7 +83,7 @@ Widget othersMessage(BuildContext context, InboxRoomController _, InboxMessage m
       CircleAvatar(
           backgroundColor: Colors.grey,
           radius: 15,
-          child: ClipOval(child: Image.network(_.inbox.profiles!.first.photoUrl))),
+          child: ClipOval(child: Image.network(_.inbox.value.profiles!.first.photoUrl))),
       AppTheme.widthSpace10,
       Expanded(
           child: Container(

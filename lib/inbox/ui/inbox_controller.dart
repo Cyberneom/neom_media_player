@@ -14,57 +14,33 @@ import '../domain/use_cases/inbox_service.dart';
 
 class InboxController extends GetxController implements InboxService {
 
-  var logger = AppUtilities.logger;
   final userController = Get.find<UserController>();
-
-  final RxString _location = "".obs;
-  String get location => _location.value;
-  set location(String location) => _location.value = location;
-
-  final RxString _messageText = "".obs;
-  String get message => _messageText.value;
-  set message(String message) => _messageText.value = message;
-
-  final RxList<Inbox> _inboxs = <Inbox>[].obs;
-  List<Inbox> get inboxs => _inboxs;
-  set inboxs(List<Inbox> inboxs) => _inboxs.value = inboxs;
-
-  final RxBool _isLoading = true.obs;
-  bool get isLoading => _isLoading.value;
-  set isLoading(bool isLoading) => _isLoading.value = isLoading;
-
-  final RxList<InboxMessage> _inboxMessages = <InboxMessage>[].obs;
-  List<InboxMessage> get inboxMessages => _inboxMessages;
-  set inboxMessages(List<InboxMessage> inboxMessages) => _inboxMessages.value = inboxMessages;
-
-  final Rx<AppProfile> _profile = AppProfile().obs;
-  AppProfile get profile => _profile.value;
-  set profile(AppProfile profile) => _profile.value = profile;
 
   String profileIds = "";
 
-  final RxList<AppProfile> _profiles = <AppProfile>[].obs;
-  List<AppProfile> get profiles => _profiles;
-  set profiles(List<AppProfile> profiles) => _profiles.value = profiles;
-
-  final Rx<SplayTreeMap<int, Inbox>> _sortedInbox = SplayTreeMap<int, Inbox>().obs;
-  SplayTreeMap<int, Inbox> get sortedInbox => _sortedInbox.value;
-  set sortedInbox(SplayTreeMap<int, Inbox> sortedInbox) => this.sortedInbox = sortedInbox;
+  final RxString location = "".obs;
+  final RxString messageText = "".obs;
+  final RxList<Inbox> inboxs = <Inbox>[].obs;
+  final RxBool isLoading = true.obs;
+  final RxList<InboxMessage> inboxMessages = <InboxMessage>[].obs;
+  final Rx<AppProfile> profile = AppProfile().obs;
+  final RxList<AppProfile> profiles = <AppProfile>[].obs;
+  final Rx<SplayTreeMap<int, Inbox>> sortedInbox = SplayTreeMap<int, Inbox>().obs;
 
 
   @override
   void onInit() async {
     super.onInit();
-    profile = userController.profile;
+    profile.value = userController.profile;
   }
 
 
   @override
   void onReady() async {
     super.onReady();
-    logger.d("Inbox Controller Ready");
+    AppUtilities.logger.t("Inbox Controller Ready");
     await loadInbox();
-    isLoading = false;
+    isLoading.value = false;
     update([AppPageIdConstants.inbox]);
 
   }
@@ -73,9 +49,9 @@ class InboxController extends GetxController implements InboxService {
   Future<void> loadItemmateDetails() async {
 
     try {
-      for (var inbox in sortedInbox.values) {
+      for (var inbox in sortedInbox.value.values) {
         for (var itemmateId in inbox.profileIds) {
-          if(itemmateId != profile.id) {
+          if(itemmateId != profile.value.id) {
             for (var profile in inbox.profiles!) {
               if(profile.id.isEmpty) {
                 AppProfile itemmate =  await ProfileFirestore().retrieveSimple(itemmateId);
@@ -87,7 +63,7 @@ class InboxController extends GetxController implements InboxService {
         }
       }
     } catch (e) {
-      logger.e(e.toString());
+      AppUtilities.logger.e(e.toString());
     }
 
     update([AppPageIdConstants.inbox]);
@@ -95,22 +71,22 @@ class InboxController extends GetxController implements InboxService {
 
 
   void clear() {
-    profile = AppProfile();
-    inboxs = [];
+    profile.value = AppProfile();
+    inboxs.value = [];
   }
 
   @override
   Future<void> loadInbox() async {
-    logger.d("");
+    AppUtilities.logger.t("Load Inbox");
     try {
-      inboxs = await InboxFirestore().getProfileInbox(profile.id);
+      inboxs.value = await InboxFirestore().getProfileInbox(profile.value.id);
 
       for (var inbox in inboxs) {
-        sortedInbox[inbox.lastMessage!.createdTime] = inbox;
+        sortedInbox.value[inbox.lastMessage!.createdTime] = inbox;
       }
       loadItemmateDetails();
     } catch (e) {
-      logger.e(e.toString());
+      AppUtilities.logger.e(e.toString());
     }
   }
 
