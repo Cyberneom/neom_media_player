@@ -100,11 +100,12 @@ class InboxRoomController extends GetxController implements InboxRoomService {
     AppUtilities.logger.t("InboxRoom Controller Ready");
   }
 
-  @override
-  void onDelete() {
-    super.onDelete();
-    timer?.cancel();
-  }
+  ///DEPRECATED
+  // @override
+  // void onDelete() {
+  //   super.onDelete();
+  //   timer?.cancel();
+  // }
 
   @override
   FutureOr onClose() {
