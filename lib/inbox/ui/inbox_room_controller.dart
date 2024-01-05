@@ -109,6 +109,7 @@ class InboxRoomController extends GetxController implements InboxRoomService {
 
   @override
   FutureOr onClose() {
+    super.onClose();
     timer?.cancel();
   }
 
