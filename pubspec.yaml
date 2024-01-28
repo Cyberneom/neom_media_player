@@ -25,12 +25,12 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 dependency_overrides:
-  neom_commons:
-    path: ../neom_commons
-  neom_posts:
-    path: ../neom_posts
-  neom_music_player:
-    path: ../neom_music_player
+#  neom_commons:
+#    path: ../neom_commons
+#  neom_posts:
+#    path: ../neom_posts
+#  neom_music_player:
+#    path: ../neom_music_player
   uuid: 4.1.0
   logger: 2.0.2+1
 
