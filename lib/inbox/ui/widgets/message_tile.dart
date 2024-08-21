@@ -19,7 +19,7 @@ class MessageTile extends StatelessWidget {
     required this.message,
     required this.sendByMe,
     this.height, this.width,
-    Key? key}) : super(key: key);
+    super.key});
 
 
   @override

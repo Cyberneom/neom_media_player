@@ -15,7 +15,7 @@ import 'package:neom_commons/core/utils/enums/app_in_use.dart';
 import 'inbox_controller.dart';
 
 class InboxPage extends StatelessWidget {
-  const InboxPage({Key? key}) : super(key: key);
+  const InboxPage({super.key});
 
   @override
   Widget build(BuildContext context) {

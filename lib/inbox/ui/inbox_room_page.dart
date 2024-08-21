@@ -17,7 +17,7 @@ import 'widgets/inbox_widgets.dart';
 import 'widgets/message_tile.dart';
 
 class InboxRoomPage extends StatelessWidget {
-  const InboxRoomPage({Key? key}) : super(key: key);
+  const InboxRoomPage({super.key});
 
 
   @override
