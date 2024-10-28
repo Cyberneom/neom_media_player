@@ -14,41 +14,45 @@ import '../inbox_room_controller.dart';
 Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
     {InboxRoomType inboxRoomType = InboxRoomType.profile}) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-    height: 80.0,
-    color: AppColor.getMain(),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        (_.postUploadController.mediaFile.value.path.isEmpty || _.sendingMessage.value) ?
-        IconButton(
-          icon: const Icon(Icons.photo),
-          iconSize: 25.0,
-          color: Theme.of(context).primaryColorLight,
-          onPressed: () async => await _.handleImage(AppFileFrom.gallery)
-        ) :
-        Stack(
-          children: [
-            SizedBox(
-                width: 50.0,
-                height: 50.0,
-                child: fileImage(_.postUploadController.mediaFile.value.path)
-            ),
-            Positioned(
-              width: 20,
-              height: 20,
-              top: 30,
-              left: 30,
-              child: FloatingActionButton(
-                  backgroundColor: Theme.of(context).primaryColorLight,
-                  child: const Icon(Icons.close, color: Colors.white70, size: 15),
-                  onPressed: () => _.clearImage()
-              ),
-            ),
-          ]
+      children: [
+        SizedBox(
+          child: (_.postUploadController.mediaFile.value.path.isEmpty || _.sendingMessage.value) ?
+          IconButton(
+              icon: const Icon(Icons.photo),
+              iconSize: 25.0,
+              color: Theme.of(context).primaryColorLight,
+              onPressed: () async => await _.handleImage(AppFileFrom.gallery)
+          ) :
+          Stack(
+              children: [
+                Container(
+                    width: 40.0, height: 40.0,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(52), // Add rounded corners here
+                    ),
+                    child: fileImage(_.postUploadController.mediaFile.value.path)
+                ),
+                Positioned(
+                  width: 20, height: 20,
+                  top: 30, left: 30,
+                  child: FloatingActionButton(
+                      backgroundColor: Theme.of(context).primaryColorLight,
+                      child: const Icon(Icons.close, color: Colors.white70, size: 15),
+                      onPressed: () => _.clearImage()
+                  ),
+                ),
+              ]
+          ),
         ),
-        AppTheme.widthSpace10,
+        if(_.postUploadController.mediaFile.value.path.isNotEmpty) AppTheme.widthSpace10,
         Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            decoration: BoxDecoration(
+              color: AppColor.main50,
+              borderRadius: BorderRadius.circular(12), // Add rounded corners here
+            ),
             child: TextField(
               controller: !_.sendingMessage.value ? _.messageController : TextEditingController(),
               minLines: 1,
@@ -61,17 +65,22 @@ Widget buildInboxMessageComposer(BuildContext context, InboxRoomController _,
               onChanged: (text) {
                 _.setMessageText(text);
               },
-            )
+            ),
+          ),
         ),
-        _.sendingMessage.value ? const SizedBox(height: 25, width: 25, child: CircularProgressIndicator())
-            : IconButton(
-          icon: const Icon(Icons.send),
-          iconSize: 25.0,
-          color: Theme.of(context).primaryColorLight,
-          onPressed: () => _.sendingMessage.value ? {} : _.addMessage(inboxRoomType: inboxRoomType),
-        ),
+        if(_.sendingMessage.value) AppTheme.widthSpace5,
+        Container(
+          child: _.sendingMessage.value ? const SizedBox(height: 25, width: 25, child: CircularProgressIndicator())
+              : IconButton(
+            icon: const Icon(Icons.send),
+            iconSize: 25.0,
+            color: Theme.of(context).primaryColorLight,
+
+            onPressed: () => _.sendingMessage.value || _.messageController.text.isEmpty ? {} : _.addMessage(inboxRoomType: inboxRoomType),
+          ),
+        )
       ],
-    ),
+    )
   );
 }
 

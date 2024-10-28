@@ -191,7 +191,6 @@ class InboxRoomController extends GetxController implements InboxRoomService {
           }
         }
       } catch (e) {
-        sendingMessage.value = false;
         AppUtilities.logger.e(e.toString());
       }
 

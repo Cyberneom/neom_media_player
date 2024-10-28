@@ -80,7 +80,8 @@ class InboxRoomPage extends StatelessWidget {
                 ),
               ),
               AppTheme.heightSpace10,
-              if(!_.isBot) buildInboxMessageComposer(context, _)
+              if(!_.isBot) buildInboxMessageComposer(context, _),
+              AppTheme.heightSpace10,
             ]
           ),
         ),
