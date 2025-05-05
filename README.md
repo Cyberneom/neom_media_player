@@ -1,2 +1,2 @@
-# neom_inbox
-Inbox for apps like Gigmeout, Emxi, Cybenerom
+# neom_freebooks
+EPUB Reader for Public Domain Books
