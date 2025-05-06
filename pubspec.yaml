@@ -15,9 +15,9 @@ dependencies:
   neom_commons:
     git:
       url: git@github.com:Cyberneom/neom_commons.git
-      
-  audioplayers: ^6.4.0
+
   audio_service: ^0.18.18
+  audioplayers: ^6.4.0
   video_player: ^2.9.5
   youtube_player_flutter: ^9.1.1
 
