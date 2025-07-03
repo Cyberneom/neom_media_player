@@ -1,7 +1,8 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:neom_commons/core/domain/model/app_media_item.dart';
-import 'package:neom_commons/core/utils/app_utilities.dart';
-import 'package:neom_commons/core/utils/enums/app_media_source.dart';
+import 'package:neom_commons/commons/utils/app_utilities.dart';
+import 'package:neom_core/core/domain/model/app_media_item.dart';
+import 'package:neom_core/core/utils/core_utilities.dart';
+import 'package:neom_core/core/utils/enums/app_media_source.dart';
 
 class MediaItemMapper  {
 
@@ -120,7 +121,7 @@ class MediaItemMapper  {
       lyrics: mediaItem.extras?['lyrics'].toString() ?? '',
       artistId: mediaItem.extras?['artistId'].toString() ?? '',
       permaUrl: mediaItem.extras?['perma_url'].toString() ?? '',
-      mediaSource: AppUtilities.isInternal(mediaItem.extras?['url'].toString() ?? '') ? AppMediaSource.internal : AppMediaSource.spotify,
+      mediaSource: CoreUtilities.isInternal(mediaItem.extras?['url'].toString() ?? '') ? AppMediaSource.internal : AppMediaSource.spotify,
     );
   }
 

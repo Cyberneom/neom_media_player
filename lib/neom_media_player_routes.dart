@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:neom_commons/core/utils/constants/app_route_constants.dart';
+import 'package:neom_core/core/utils/constants/app_route_constants.dart';
 
 import 'ui/full_screen_video.dart';
 
