@@ -4,15 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart';
-import 'package:neom_commons/commons/utils/app_utilities.dart';
-import 'package:neom_commons/commons/utils/external_utilities.dart';
-import 'package:neom_core/core/app_config.dart';
-import 'package:neom_core/core/domain/model/app_media_item.dart';
-import 'package:neom_core/core/utils/enums/app_hive_box.dart';
-import 'package:neom_core/core/utils/enums/app_media_source.dart';
+import 'package:neom_commons/utils/app_utilities.dart';
+import 'package:neom_commons/utils/file_downloader.dart';
+import 'package:neom_core/app_config.dart';
+import 'package:neom_core/domain/model/app_media_item.dart';
+import 'package:neom_core/utils/enums/app_hive_box.dart';
+import 'package:neom_core/utils/enums/app_media_source.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-
 
 import '../../utils/constants/player_translation_constants.dart';
 import 'ext_storage_provider.dart';
@@ -341,7 +340,7 @@ class Download with ChangeNotifier {
         AppConfig.logger.i('Download complete, modifying file');
         final file = File(mediaPath!);
         await file.writeAsBytes(bytes);
-        imgPath = await ExternalUtilities.downloadImage(mediaItem.imgUrl);
+        imgPath = await FileDownloader.downloadImage(mediaItem.imgUrl);
         if(mediaItem.lyrics.isNotEmpty) AppConfig.logger.i('Getting audio tags');
         if (Platform.isAndroid) {
           try {

@@ -1,5 +1,5 @@
 name: neom_media_player
-description: Mediaplayer for functionalities like playing audio, video, and youtube videos.
+description: Mediaplayer for functionalities like playing video or youtube videos.
 version: 1.1.0
 homepage: https://github.com/Cyberneom/neom_media_player
 publish_to: 'none'
@@ -19,8 +19,7 @@ dependencies:
     git:
       url: git@github.com:Cyberneom/neom_commons.git
 
-  audio_service: ^0.18.18
-  audioplayers: ^6.4.0
+
   video_player: ^2.9.5
   youtube_player_flutter: ^9.1.1
 
