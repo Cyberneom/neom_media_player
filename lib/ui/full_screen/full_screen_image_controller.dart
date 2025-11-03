@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:neom_core/app_config.dart';
 
-class MediaFullScreenController extends GetxController {
+class FullScreenImageController extends GetxController {
 
   String mediaUrl = "";
   bool isRemote = true;

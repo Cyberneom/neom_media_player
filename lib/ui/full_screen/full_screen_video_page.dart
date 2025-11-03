@@ -3,30 +3,31 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:neom_commons/app_flavour.dart';
 import 'package:neom_commons/ui/theme/app_color.dart';
 import 'package:neom_commons/ui/theme/app_theme.dart';
 import 'package:neom_commons/ui/widgets/app_circular_progress_indicator.dart';
+import 'package:neom_commons/ui/widgets/buttons/video_play_button.dart';
 import 'package:neom_commons/ui/widgets/header_intro.dart';
-import 'package:neom_commons/ui/widgets/video_play_button.dart';
-import 'package:neom_commons/utils/constants/app_translation_constants.dart';
 import 'package:neom_commons/utils/datetime_utilities.dart';
 import 'package:neom_core/utils/constants/core_constants.dart';
 import 'package:video_player/video_player.dart';
 
-class FullScreenVideo extends StatefulWidget {
+import '../../utils/constants/media_player_translation_constants.dart';
 
+class FullScreenVideoPage extends StatefulWidget {
 
   final String? mediaUrl;
   final VideoPlayerController? controller;
   final bool showPlaybackSpeed;
 
-  const FullScreenVideo({this.mediaUrl, this.controller, this.showPlaybackSpeed = false, super.key});
+  const FullScreenVideoPage({this.mediaUrl, this.controller, this.showPlaybackSpeed = false, super.key});
 
   @override
-  FullScreenVideoState createState() => FullScreenVideoState();
+  FullScreenVideoPageState createState() => FullScreenVideoPageState();
 }
 
-class FullScreenVideoState extends State<FullScreenVideo> with SingleTickerProviderStateMixin {
+class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTickerProviderStateMixin {
 
   late VideoPlayerController controller;
   late Stream<Duration> durationStream;
@@ -119,7 +120,7 @@ class FullScreenVideoState extends State<FullScreenVideo> with SingleTickerProvi
 
     return Scaffold(
       // extendBodyBehindAppBar: true,
-      backgroundColor: AppColor.main50,
+      backgroundColor: AppFlavour.getBackgroundColor(),
       body: Container(
         decoration: AppTheme.appBoxDecoration,
         child: !isLoading ?
@@ -254,7 +255,7 @@ class FullScreenVideoState extends State<FullScreenVideo> with SingleTickerProvi
           child: PopupMenuButton<double>(
             initialValue: controller.value.playbackSpeed,
             color: AppColor.getMain(),
-            tooltip: AppTranslationConstants.playbackSpeed,
+            tooltip: MediaPlayerTranslationConstants.playbackSpeed,
             onSelected: (double speed) {
               controller.setPlaybackSpeed(speed);
               setState(() {});
