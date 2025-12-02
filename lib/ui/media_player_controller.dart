@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:neom_commons/ui/theme/app_color.dart';
 import 'package:neom_core/app_config.dart';
+import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/use_cases/media_player_service.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -156,6 +157,9 @@ class MediaPlayerController extends GetxController implements MediaPlayerService
   }
 
   void _handleVideoVisibility<T>(Map<String, GlobalKey> keys, Map<String, T> controllers) {
+
+    if(Get.find<AudioHandlerService>().isPlaying) return;
+
     for (int i = 0; i < keys.length; i++) {
       final entry = keys.values.elementAt(i);
 
@@ -177,7 +181,6 @@ class MediaPlayerController extends GetxController implements MediaPlayerService
       // Verifica si el centro del video está dentro del área de visibilidad
       final isVisible = videoCenter > (screenHeight / 2) - visibilityMargin &&
           videoCenter < (screenHeight / 2) + visibilityMargin;
-
 
       final controller = controllers[keys.keys.elementAt(i)];
 

@@ -10,6 +10,7 @@ import 'package:neom_commons/ui/widgets/app_circular_progress_indicator.dart';
 import 'package:neom_commons/ui/widgets/buttons/video_play_button.dart';
 import 'package:neom_commons/ui/widgets/header_intro.dart';
 import 'package:neom_commons/utils/datetime_utilities.dart';
+import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/utils/constants/core_constants.dart';
 import 'package:video_player/video_player.dart';
 
@@ -43,9 +44,16 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
 
   String currentClipPhrase = '';
 
+  AudioHandlerService audioHandler = Get.find<AudioHandlerService>();
+
   @override
   void initState() {
     super.initState();
+
+    if(audioHandler.isPlaying) {
+      audioHandler.stop();
+      audioHandler.stoppedByVideo = true;
+    }
 
     currentClipPhrase = getRandomClipPhrase();
 
@@ -70,10 +78,6 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
     controller.initialize().then((_) {
         DeviceOrientation orientation = DeviceOrientation.portraitUp;
 
-        // if (controller.value.aspectRatio > 1) {
-        //   orientation = DeviceOrientation.landscapeLeft;
-        // }
-
         if (mounted && controller.value.isInitialized) {
           controller.play().then((_) {
             setState(() {
@@ -90,7 +94,6 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
       return controller.value.position;
     });
 
-
   }
 
   @override
@@ -104,6 +107,10 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown
     ]);
+
+    if(audioHandler.stoppedByVideo) {
+      audioHandler.play();
+    }
   }
 
 

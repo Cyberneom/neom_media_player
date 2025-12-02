@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
+import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:video_player/video_player.dart';
 
 import 'full_screen/full_screen_video_page.dart';
@@ -88,6 +89,24 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                   ),
                 ),
               ),
+              Obx(()=> (Get.find<AudioHandlerService>().isPlaying) ?
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0x36FFFFFF).withOpacity(0.1),
+                          const Color(0x0FFFFFFF).withOpacity(0.1)
+                        ],
+                        begin: FractionalOffset.topLeft,
+                        end: FractionalOffset.bottomRight
+                      ),
+                      borderRadius: BorderRadius.circular(50)
+                    ),
+                    child: Icon(Icons.play_arrow, size: 60,),
+                  ),
+                ) : SizedBox.shrink()
+              ),
             ],
           ),
           onTap: () {
@@ -98,11 +117,6 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
             Get.to(() => FullScreenVideoPage(controller: _controller),
                 transition: Transition.zoom);
           },
-          onDoubleTap: () {
-            // Get.to(() => FullScreenVideo(controller: _controller,),
-            //     transition: Transition.zoom);
-          },
-
         )
       ) : Stack(
       alignment: Alignment.center,
