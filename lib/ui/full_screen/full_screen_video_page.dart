@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:sint/sint.dart';
 import 'package:neom_commons/app_flavour.dart';
 import 'package:neom_commons/ui/theme/app_color.dart';
 import 'package:neom_commons/ui/theme/app_theme.dart';
@@ -44,7 +44,7 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
 
   String currentClipPhrase = '';
 
-  AudioHandlerService audioHandler = Get.find<AudioHandlerService>();
+  AudioHandlerService audioHandler = Sint.find<AudioHandlerService>();
 
   @override
   void initState() {

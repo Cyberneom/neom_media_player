@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:sint/sint.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'media_player_controller.dart';
@@ -30,8 +30,8 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
       );
 
       // Registrar el controlador en el TimelineController
-      if (Get.isRegistered<MediaPlayerController>() && controller != null) {
-        final mediaPlayerController = Get.find<MediaPlayerController>();
+      if (Sint.isRegistered<MediaPlayerController>() && controller != null) {
+        final mediaPlayerController = Sint.find<MediaPlayerController>();
         mediaPlayerController.registerYouTubeKeyController(widget.youtubeUrl, widget.youtubeKey, controller!);
       } else {
         controller?.play();

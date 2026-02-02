@@ -1,7 +1,7 @@
-import 'package:get/get.dart';
+import 'package:sint/sint.dart';
 import 'package:neom_core/app_config.dart';
 
-class FullScreenImageController extends GetxController {
+class FullScreenImageController extends SintController {
 
   String mediaUrl = "";
   bool isRemote = true;
@@ -13,10 +13,10 @@ class FullScreenImageController extends GetxController {
 
     try {
 
-      if(Get.arguments != null && Get.arguments.isNotEmpty) {
-        mediaUrl = Get.arguments[0];
-        if(Get.arguments.length > 1) {
-          isRemote = Get.arguments[1];
+      if(Sint.arguments != null && Sint.arguments.isNotEmpty) {
+        mediaUrl = Sint.arguments[0];
+        if(Sint.arguments.length > 1) {
+          isRemote = Sint.arguments[1];
         }
       }
 

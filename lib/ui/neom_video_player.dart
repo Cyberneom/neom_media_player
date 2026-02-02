@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:sint/sint.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:video_player/video_player.dart';
@@ -32,8 +32,8 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
         isInitialized.value = true;
         _controller.setVolume(0); // 🔇 Establecer el volumen en cero por defecto
 
-        if (Get.isRegistered<MediaPlayerController>()) {
-          final mediaPlayerController = Get.find<MediaPlayerController>();
+        if (Sint.isRegistered<MediaPlayerController>()) {
+          final mediaPlayerController = Sint.find<MediaPlayerController>();
           mediaPlayerController.registerVideoKeyController(widget.videoUrl, widget.videoKey, _controller);
         } else {
           _controller.play(); // ▶️ Reproducir automáticamente                // setState(() {});
@@ -89,7 +89,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                   ),
                 ),
               ),
-              Obx(()=> (Get.find<AudioHandlerService>().isPlaying) ?
+              Obx(()=> (Sint.find<AudioHandlerService>().isPlaying) ?
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
@@ -114,7 +114,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
               _controller.setVolume(1);
               isMuted.value = false;
             }
-            Get.to(() => FullScreenVideoPage(controller: _controller),
+            Sint.to(() => FullScreenVideoPage(controller: _controller),
                 transition: Transition.zoom);
           },
         )
