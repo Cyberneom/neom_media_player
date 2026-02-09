@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sint/sint.dart';
 import 'package:neom_commons/app_flavour.dart';
 import 'package:neom_commons/ui/theme/app_color.dart';
 import 'package:neom_commons/ui/theme/app_theme.dart';
@@ -12,6 +11,7 @@ import 'package:neom_commons/ui/widgets/header_intro.dart';
 import 'package:neom_commons/utils/datetime_utilities.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/utils/constants/core_constants.dart';
+import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../utils/constants/media_player_translation_constants.dart';
@@ -183,7 +183,7 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
               left: 0, right: 0,
               child: SizedBox(height: videoHeight),
             ),
-            if(isPlaying) Container(color: Colors.black.withOpacity(0.6),),
+            if(isPlaying) Container(color: Colors.black.withValues(alpha: 0.6),),
             Positioned(
               top: MediaQuery.of(context).padding.top + 10,
               left: 10,
@@ -286,21 +286,22 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
     );
   }
 
-  void _onFullscreenIconButtonTap() {
-    setState(() {
-      if (currentOrientation == DeviceOrientation.portraitUp) {
-        currentOrientation = DeviceOrientation.landscapeLeft;
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-        ]);
-      } else {
-        currentOrientation = DeviceOrientation.portraitUp;
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-        ]);
-      }
-    });
-  }
+  ///DEPRECATED - NOT IN USE
+  // void _onFullscreenIconButtonTap() {
+  //   setState(() {
+  //     if (currentOrientation == DeviceOrientation.portraitUp) {
+  //       currentOrientation = DeviceOrientation.landscapeLeft;
+  //       SystemChrome.setPreferredOrientations([
+  //         DeviceOrientation.landscapeLeft,
+  //       ]);
+  //     } else {
+  //       currentOrientation = DeviceOrientation.portraitUp;
+  //       SystemChrome.setPreferredOrientations([
+  //         DeviceOrientation.portraitUp,
+  //       ]);
+  //     }
+  //   });
+  // }
 
   String getRandomClipPhrase() {
     final random = Random();

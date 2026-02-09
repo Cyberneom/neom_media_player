@@ -1,86 +1,188 @@
 # neom_media_player
-neom_media_player is a dedicated module within the Open Neom ecosystem, primarily responsible
-for providing robust media playback functionalities. It centralizes the logic and UI components
-for playing various types of media, including local videos and YouTube videos, ensuring
-a consistent and high-quality  playback experience across the application.
 
-This module is designed to abstract the complexities of media playback, allowing other modules
-(like neom_posts and neom_timeline) to easily integrate video and YouTube content without needing
-to handle the underlying player implementations. It adheres to Open Neom's Clean Architecture principles
-by providing a clear service interface (MediaPlayerService in neom_core) for playback control,
-while encapsulating the concrete player implementations. Its focus on seamless media consumption
-aligns with the Tecnozenism philosophy of enriching digital interactions.
+Media Playback module for the Open Neom ecosystem.
 
-🌟 Features & Responsibilities
-neom_media_player provides a comprehensive set of functionalities for media playback:
-•	Video Playback: Offers dedicated widgets (NeomVideoPlayer) for playing local or network-based video files,
-    including basic controls (play/pause, mute, progress indicator) and full-screen capabilities.
-•	YouTube Video Playback: Provides dedicated widgets (NeomYoutubePlayer) for embedding and playing
-    YouTube videos, including standard controls and full-screen options.
-•	Full-Screen Media Display: Includes dedicated pages (FullScreenImagePage, FullScreenVideoPage)
-    for viewing images and videos in full-screen mode, enhancing the immersive content experience.
-•	Playback Control & Management: The MediaPlayerController manages the lifecycle of video and YouTube
-    player controllers, including initialization, play/pause, and disposal.
-•	Visibility-Based Playback: Implements logic (visibleVideoAction) to automatically play videos
-    when they are visible on screen and pause them when they scroll out of view,
-    optimizing performance and user experience in feeds.
-•	Playback Speed Control: Provides options for adjusting the playback speed of videos.
-•	Global Key Management: Manages GlobalKey instances for video and YouTube players, allowing for 
-    unique identification and control of multiple player instances across the application.
-•	Spotify Integration (Metadata): Stores and provides Spotify track image URLs, enabling neom_posts
-    to display relevant visuals for Spotify content.
+neom_media_player is a dedicated module responsible for providing robust media playback functionalities. It centralizes the logic and UI components for playing various types of media, including local videos and YouTube videos, ensuring a consistent and high-quality playback experience across the application.
 
-🛠 Technical Highlights / Why it Matters (for developers)
-For developers, neom_media_player serves as an excellent case study for:
-•	External Player Library Integration: Demonstrates effective integration of powerful third-party Flutter
-    packages like video_player and youtube_player_flutter for robust media playback.
-•	GetX for State Management: Utilizes GetX's MediaPlayerController for managing reactive state related
-    to playback (e.g., isPlaying, isInitialized) and orchestrating player actions.
-•	Service-Oriented Architecture: Implements the MediaPlayerService interface (defined in neom_core),
-    showcasing how concrete media playback functionalities are exposed through an abstraction,
-    allowing other modules to consume them without direct coupling.
-•	Widget-Controller Interaction: Illustrates how StatefulWidgets (NeomVideoPlayer, NeomYoutubePlayer)
-    manage their internal player controllers and register/unregister them with a GetX controller
-    (MediaPlayerController) for centralized management.
-•	Performance Optimization: Implements visibility-based playback to efficiently manage resources by pausing off-screen videos.
-•	UI for Media Playback: Provides examples of building custom video player controls and full-screen viewing experiences.
-•	Global Key Usage: Demonstrates the practical application of GlobalKey for uniquely identifying and controlling
-    specific player instances in a dynamic list (like a timeline).
+This module abstracts the complexities of media playback, allowing other modules (like neom_posts and neom_timeline) to easily integrate video and YouTube content without handling the underlying player implementations. It adheres to Open Neom's Clean Architecture principles by providing a clear service interface (MediaPlayerService) for playback control.
 
-How it Supports the Open Neom Initiative
-neom_media_player is vital to the Open Neom ecosystem and the broader Tecnozenism vision by:
-•	Enabling Rich Multimedia Content: Provides the foundational capabilities for playing various media types,
-    making the platform more engaging and dynamic for users.
-•	Enhancing User Experience: Ensures a smooth, high-quality, and optimized media playback experience,
-    crucial for content consumption and user satisfaction.
-•	Supporting Digital Expression: Allows users to share and consume video and YouTube content seamlessly,
-    aligning with the Tecnozenism principle of conscious digital expression.
-•	Facilitating Research & Biofeedback: The ability to play diverse media could be leveraged for displaying
-    visual data or guided content relevant to neuroscientific research and biofeedback applications.
-•	Showcasing Modularity: As a specialized, self-contained module, it exemplifies Open Neom's "Plug-and-Play" architecture,
-    demonstrating how complex functionalities can be built independently and integrated into the broader application.
+## Features & Responsibilities
 
-🚀 Usage
-This module provides widgets (NeomVideoPlayer, NeomYoutubePlayer) that can be used directly in UI components 
-(e.g., PostDisplayCard in neom_posts). Its MediaPlayerController implements MediaPlayerService (from neom_core), 
-allowing other modules to control playback and retrieve player-related data through the service interface. 
-It also offers routes for full-screen media viewing.
+### Video Playback
+- **NeomVideoPlayer**: Widget for local/network video files
+- Basic controls (play/pause, mute, progress indicator)
+- Full-screen capabilities
+- Playback speed control
 
-📦 Dependencies
-neom_media_player relies on neom_core for core services, models, and routing constants, and on neom_commons
-for reusable UI components, themes, and utility functions. It directly depends on video_player
-and youtube_player_flutter for its core playback functionalities.
+### YouTube Video Playback
+- **NeomYoutubePlayer**: Embedded YouTube player widget
+- Standard YouTube controls
+- Full-screen options
+- Quality selection
 
-🤝 Contributing
-We welcome contributions to the neom_media_player module! If you're passionate about media playback,
-performance optimization, integrating new player types, or enhancing the user's content consumption experience,
-your contributions can significantly enrich Open Neom.
+### Full-Screen Media Display
+- **FullScreenImagePage**: Immersive image viewing
+- **FullScreenVideoPage**: Immersive video playback
+- Pinch-to-zoom support
+- Swipe gestures
 
-To understand the broader architectural context of Open Neom and how neom_media_player fits into the overall
-vision of Tecnozenism, please refer to the main project's MANIFEST.md.
+### Playback Control & Management
+- MediaPlayerController lifecycle management
+- Initialization, play/pause, disposal
+- Global key management for multiple instances
+- Visibility-based playback optimization
 
-For guidance on how to contribute to Open Neom and to understand the various levels of learning and engagement
-possible within the project, consult our comprehensive guide: Learning Flutter Through Open Neom: A Comprehensive Path.
+### Spotify Integration
+- Track image URL storage
+- Metadata display support
+- "Listen on Spotify" integration
 
-📄 License
+## Architecture
+
+```
+lib/
+├── media_player_routes.dart
+├── ui/
+│   ├── media_player_controller.dart
+│   ├── neom_video_player.dart
+│   ├── neom_youtube_player.dart
+│   └── full_screen/
+│       ├── full_screen_image_controller.dart
+│       ├── full_screen_image_page.dart
+│       ├── full_screen_video_controller.dart
+│       └── full_screen_video_page.dart
+├── utils/
+│   └── constants/
+│       └── player_translation_constants.dart
+└── neom_media_player.dart
+```
+
+## Dependencies
+
+```yaml
+dependencies:
+  neom_core: ^2.0.0           # Core services and models
+  neom_commons: ^2.0.0        # Shared UI components
+  sint: ^1.0.0                # State management (SINT framework)
+  video_player: ^2.9.2        # Native video playback
+  youtube_player_flutter: ^9.1.1  # YouTube embedding
+  chewie: ^1.10.0             # Video player controls
+```
+
+## Usage
+
+### Video Player Widget
+
+```dart
+import 'package:neom_media_player/ui/neom_video_player.dart';
+
+NeomVideoPlayer(
+  videoUrl: 'https://example.com/video.mp4',
+  autoPlay: false,
+  showControls: true,
+  onFullScreen: () => navigateToFullScreen(),
+)
+```
+
+### YouTube Player Widget
+
+```dart
+import 'package:neom_media_player/ui/neom_youtube_player.dart';
+
+NeomYoutubePlayer(
+  youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  autoPlay: false,
+  showControls: true,
+)
+```
+
+### Full-Screen Navigation
+
+```dart
+// Navigate to full-screen video
+Sint.toNamed(
+  AppRouteConstants.fullScreenVideo,
+  arguments: {'videoUrl': videoUrl},
+);
+
+// Navigate to full-screen image
+Sint.toNamed(
+  AppRouteConstants.fullScreenImage,
+  arguments: {'imageUrl': imageUrl},
+);
+```
+
+### MediaPlayerController
+
+```dart
+import 'package:neom_media_player/ui/media_player_controller.dart';
+
+final controller = Sint.find<MediaPlayerController>();
+
+// Register video player
+controller.registerVideoKeyController(key, videoController);
+
+// Visibility-based playback
+controller.visibleVideoAction(key, isVisible: true);
+
+// Get Spotify track image
+String? imageUrl = controller.getSpotifyTrackImage(trackId);
+```
+
+## Visibility-Based Playback
+
+The module automatically manages video playback based on screen visibility:
+
+```dart
+// In a scrollable list
+VisibilityDetector(
+  key: Key('video-$index'),
+  onVisibilityChanged: (info) {
+    final isVisible = info.visibleFraction > 0.5;
+    controller.visibleVideoAction(videoKey, isVisible: isVisible);
+  },
+  child: NeomVideoPlayer(...),
+)
+```
+
+## ROADMAP 2026
+
+### Q1 2026 - Enhanced Player Features
+- [ ] Picture-in-picture mode
+- [ ] Background audio playback
+- [ ] Chromecast/AirPlay support
+- [ ] Playlist management
+
+### Q2 2026 - Quality & Performance
+- [ ] Adaptive bitrate streaming (HLS/DASH)
+- [ ] Video caching/offline playback
+- [ ] Buffer optimization
+- [ ] Memory management improvements
+
+### Q3 2026 - Advanced Controls
+- [ ] Subtitle/closed caption support
+- [ ] Multiple audio track selection
+- [ ] Playback history
+- [ ] Resume from last position
+
+### Q4 2026 - Social Features
+- [ ] Video reactions/comments overlay
+- [ ] Share timestamp links
+- [ ] Collaborative playlists
+- [ ] Watch party sync
+
+## State Management
+
+neom_media_player uses the SINT framework (GetX replacement) for:
+- Reactive playback state (isPlaying, isInitialized)
+- Controller lifecycle management
+- Global key registry for multiple players
+- Cross-widget communication
+
+## Contributing
+
+We welcome contributions! If you're passionate about media playback, performance optimization, or integrating new player types, your contributions can significantly enrich Open Neom.
+
+## License
+
 This project is licensed under the Apache License, Version 2.0, January 2004. See the LICENSE file for details.

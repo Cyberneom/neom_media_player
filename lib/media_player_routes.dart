@@ -1,5 +1,5 @@
-import 'package:sint/sint.dart';
 import 'package:neom_core/utils/constants/app_route_constants.dart';
+import 'package:sint/sint.dart';
 
 import 'ui/full_screen/full_screen_image_page.dart';
 import 'ui/full_screen/full_screen_video_page.dart';

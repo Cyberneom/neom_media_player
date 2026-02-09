@@ -1,11 +1,11 @@
 import 'dart:core';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:sint/sint.dart';
-import 'package:neom_commons/ui/theme/app_color.dart';
 import 'package:neom_core/app_config.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/use_cases/media_player_service.dart';
+import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -112,7 +112,7 @@ class MediaPlayerController extends SintController implements MediaPlayerService
                     isPlaying.value ? Icons.pause : Icons.play_arrow,
                     size: 50, // Icono más grande para mejor UX
                   ),
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   onPressed: () => playPauseVideo(),
                 ),
               ),

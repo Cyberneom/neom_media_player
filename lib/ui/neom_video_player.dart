@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sint/sint.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
+import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 
 import 'full_screen/full_screen_video_page.dart';
@@ -95,8 +95,8 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0x36FFFFFF).withOpacity(0.1),
-                          const Color(0x0FFFFFFF).withOpacity(0.1)
+                          const Color(0x36FFFFFF).withValues(alpha: 0.1),
+                          const Color(0x0FFFFFFF).withValues(alpha: 0.1)
                         ],
                         begin: FractionalOffset.topLeft,
                         end: FractionalOffset.bottomRight

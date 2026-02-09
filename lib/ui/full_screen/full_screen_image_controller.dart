@@ -1,5 +1,5 @@
-import 'package:sint/sint.dart';
 import 'package:neom_core/app_config.dart';
+import 'package:sint/sint.dart';
 
 class FullScreenImageController extends SintController {
 
