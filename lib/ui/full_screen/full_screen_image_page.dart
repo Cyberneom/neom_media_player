@@ -1,6 +1,6 @@
-import 'dart:io';
-
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
+import 'package:neom_core/utils/platform/core_io.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:neom_commons/app_flavour.dart';
 import 'package:neom_commons/ui/theme/app_theme.dart';
@@ -26,9 +26,9 @@ class FullScreenImagePage extends StatelessWidget {
               child: Center(
                 child: Hero(
                     tag: controller.isRemote ? 'img_url_hero_${controller.mediaUrl}' : 'img_file_hero_${controller.mediaUrl}',
-                    child: controller.isRemote
-                        ? CachedNetworkImage(imageUrl: controller.mediaUrl,)
-                        : Image.file(File(controller.mediaUrl)
+                    child: controller.isRemote || kIsWeb
+                        ? HandledCachedNetworkImage(controller.mediaUrl)
+                        : Image.file(File(controller.mediaUrl) as dynamic,
                     ),
                 ),
               ),

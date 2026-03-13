@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neom_commons/app_flavour.dart';
@@ -44,15 +45,15 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
 
   String currentClipPhrase = '';
 
-  AudioHandlerService audioHandler = Sint.find<AudioHandlerService>();
+  AudioHandlerService? audioHandler = kIsWeb ? null : Sint.find<AudioHandlerService>();
 
   @override
   void initState() {
     super.initState();
 
-    if(audioHandler.isPlaying) {
-      audioHandler.stop();
-      audioHandler.stoppedByVideo = true;
+    if(audioHandler?.isPlaying ?? false) {
+      audioHandler?.stop();
+      audioHandler?.stoppedByVideo = true;
     }
 
     currentClipPhrase = getRandomClipPhrase();
@@ -108,8 +109,8 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
       DeviceOrientation.portraitDown
     ]);
 
-    if(audioHandler.stoppedByVideo) {
-      audioHandler.play();
+    if(audioHandler?.stoppedByVideo ?? false) {
+      audioHandler?.play();
     }
   }
 

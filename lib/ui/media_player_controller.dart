@@ -1,5 +1,5 @@
 import 'dart:core';
-import 'dart:io';
+import 'package:neom_core/utils/platform/core_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:neom_core/app_config.dart';
@@ -45,7 +45,7 @@ class MediaPlayerController extends SintController implements MediaPlayerService
     AppConfig.logger.d("initializeVideoPlayerController");
 
     try {
-      videoPlayerController = VideoPlayerController.file(file);
+      videoPlayerController = VideoPlayerController.file(file as dynamic);
       await videoPlayerController?.initialize();
 
       if(videoPlayerController?.value.isInitialized ?? false) {

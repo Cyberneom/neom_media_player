@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
@@ -56,7 +57,11 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
     return Obx(() => isInitialized.value
         ? AspectRatio(
         key: widget.videoKey,
-        aspectRatio: _controller.value.aspectRatio,
+        // On web, clamp portrait videos to 4:5 min ratio (like Instagram)
+        // to prevent excessively tall videos in the feed
+        aspectRatio: kIsWeb
+            ? _controller.value.aspectRatio.clamp(4 / 5, double.infinity)
+            : _controller.value.aspectRatio,
         child: GestureDetector(
           child: Stack(
             alignment: Alignment.bottomCenter,
@@ -121,7 +126,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
       ) : Stack(
       alignment: Alignment.center,
       children: [
-        HandledCachedNetworkImage(widget.thumbnailUrl),
+        HandledCachedNetworkImage(widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl),
         const Center(child: CircularProgressIndicator()),
       ],)
     );
