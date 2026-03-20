@@ -1,4 +1,5 @@
 import 'package:neom_core/app_config.dart';
+import 'package:neom_core/utils/neom_error_logger.dart';
 import 'package:sint/sint.dart';
 
 class FullScreenImageController extends SintController {
@@ -20,8 +21,8 @@ class FullScreenImageController extends SintController {
         }
       }
 
-    } catch (e) {
-      AppConfig.logger.e(e.toString());
+    } catch (e, st) {
+      NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'onInit');
     }
 
   }

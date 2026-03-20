@@ -3,6 +3,7 @@ import 'package:neom_core/utils/platform/core_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:neom_core/app_config.dart';
+import 'package:neom_core/utils/neom_error_logger.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/use_cases/media_player_service.dart';
 import 'package:sint/sint.dart';
@@ -34,8 +35,8 @@ class MediaPlayerController extends SintController implements MediaPlayerService
 
     try {
 
-    } catch (e) {
-      AppConfig.logger.e(e.toString());
+    } catch (e, st) {
+      NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'onInit');
     }
 
   }
@@ -53,8 +54,8 @@ class MediaPlayerController extends SintController implements MediaPlayerService
         final videoSize = videoPlayerController!.value.size;
         _aspectRatio = videoSize.width / videoSize.height;
       }
-    } catch (e) {
-      AppConfig.logger.e(e.toString());
+    } catch (e, st) {
+      NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'initializeVideoPlayerController');
     }
   }
 
@@ -146,8 +147,8 @@ class MediaPlayerController extends SintController implements MediaPlayerService
     try {
       _handleVideoVisibility(_videoKeys, _videoControllers);
       _handleVideoVisibility(_youtubeKeys, _youtubeControllers);
-    } catch (e) {
-      AppConfig.logger.e(e.toString());
+    } catch (e, st) {
+      NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'visibleVideoAction');
     }
   }
 
