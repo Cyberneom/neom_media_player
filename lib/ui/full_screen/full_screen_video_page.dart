@@ -190,7 +190,7 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
               left: 10,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Sint.back(),
               ),
             ),
             if(controller.value.isInitialized) Positioned.fill(
@@ -229,7 +229,7 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
               isPlaying = !isPlaying;
             });
           },
-          onDoubleTap: () => Navigator.pop(context),
+          onDoubleTap: () => Sint.back(),
         ),
         StreamBuilder<Duration>(
           stream: durationStream,

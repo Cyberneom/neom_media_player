@@ -33,7 +33,7 @@ class FullScreenImagePage extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                Navigator.pop(context);
+                Sint.back();
               },
             ),
           ),
