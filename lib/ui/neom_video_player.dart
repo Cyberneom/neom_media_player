@@ -13,8 +13,34 @@ class NeomVideoPlayer extends StatefulWidget {
   final String thumbnailUrl;
   final bool showProgress;
   final GlobalKey videoKey; // ✅ Nuevo parámetro para la clave única
+  final bool isFullscreen;
+  final VoidCallback? onFullScreenTap;
 
-  const NeomVideoPlayer({required this.videoUrl, required this.videoKey, this.showProgress = false, this.thumbnailUrl = '', super.key});
+  // Global mute state shared across all instances
+  static final RxBool isGlobalMuted = true.obs;
+
+  // Track active fullscreen video URLs to prevent double rendering inline
+  static final RxSet<String> _fullscreenUrls = <String>{}.obs;
+
+  final bool isTransitioning;
+
+  // Static cache to keep video controllers alive and reuse them on Web
+  static final Map<String, VideoPlayerController> _webVideoCache = {};
+
+  static VideoPlayerController? getVideoController(String url) {
+    return _webVideoCache[url];
+  }
+
+  const NeomVideoPlayer({
+    required this.videoUrl,
+    required this.videoKey,
+    this.showProgress = true,
+    this.thumbnailUrl = '',
+    this.isFullscreen = false,
+    this.onFullScreenTap,
+    this.isTransitioning = false,
+    super.key,
+  });
 
   @override
   State<NeomVideoPlayer> createState() => _NeomVideoPlayerState();
@@ -23,114 +49,287 @@ class NeomVideoPlayer extends StatefulWidget {
 class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
   late VideoPlayerController _controller;
   final isInitialized = false.obs;
-  final isMuted = true.obs; // 🔇 Mute por defecto
+  bool _isFullScreenActive = false;
+  dynamic _muteSubscription;
+
+  void _pauseMusicPlayer() {
+    if (Sint.isRegistered<AudioHandlerService>()) {
+      final audioHandler = Sint.find<AudioHandlerService>();
+      if (audioHandler.isPlaying) {
+        audioHandler.pause();
+        audioHandler.stoppedByVideo = true;
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        isInitialized.value = true;
-        _controller.setVolume(0); // 🔇 Establecer el volumen en cero por defecto
+    if (widget.isFullscreen) {
+      NeomVideoPlayer._fullscreenUrls.add(widget.videoUrl);
+    }
+    final cached = NeomVideoPlayer._webVideoCache[widget.videoUrl];
+    if (kIsWeb && cached != null) {
+      _controller = cached;
+      isInitialized.value = _controller.value.isInitialized;
+      if (isInitialized.value) {
+        _controller.setVolume((NeomVideoPlayer.isGlobalMuted.value || !widget.isFullscreen) ? 0 : 1);
+      }
+    } else {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+        ..initialize().then((_) {
+          isInitialized.value = true;
+          _controller.setVolume((NeomVideoPlayer.isGlobalMuted.value || !widget.isFullscreen) ? 0 : 1);
 
-        if (Sint.isRegistered<MediaPlayerController>()) {
-          final mediaPlayerController = Sint.find<MediaPlayerController>();
-          mediaPlayerController.registerVideoKeyController(widget.videoUrl, widget.videoKey, _controller);
-        } else {
-          _controller.play(); // ▶️ Reproducir automáticamente                // setState(() {});
+          if (Sint.isRegistered<MediaPlayerController>()) {
+            final mediaPlayerController = Sint.find<MediaPlayerController>();
+            mediaPlayerController.registerVideoKeyController(widget.videoUrl, widget.videoKey, _controller);
+          } else {
+            _controller.play(); // ▶️ Reproducir automáticamente
+          }
+        });
+      if (kIsWeb) {
+        NeomVideoPlayer._webVideoCache[widget.videoUrl] = _controller;
+      }
+    }
+
+    _muteSubscription = NeomVideoPlayer.isGlobalMuted.listen((muted) {
+      if (mounted && isInitialized.value) {
+        _controller.setVolume((muted || !widget.isFullscreen) ? 0 : 1);
+        if (!muted && widget.isFullscreen && _controller.value.isPlaying) {
+          _pauseMusicPlayer();
         }
-      });
+      }
+    });
 
     _controller.addListener(() {
-      // setState(() {});
+      if (mounted && _controller.value.isPlaying && widget.isFullscreen && !NeomVideoPlayer.isGlobalMuted.value) {
+        _pauseMusicPlayer();
+      }
     });
   }
 
   @override
   void dispose() {
+    if (widget.isFullscreen) {
+      NeomVideoPlayer._fullscreenUrls.remove(widget.videoUrl);
+    }
+    _muteSubscription?.cancel();
+    
+    if (Sint.isRegistered<MediaPlayerController>()) {
+      Sint.find<MediaPlayerController>().unregisterVideoKeyController(widget.videoUrl);
+    }
+    
+    if (kIsWeb) {
+      NeomVideoPlayer._webVideoCache.remove(widget.videoUrl);
+    }
+    
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => isInitialized.value
-        ? AspectRatio(
-        key: widget.videoKey,
-        // On web, clamp portrait videos to 4:5 min ratio (like Instagram)
-        // to prevent excessively tall videos in the feed
-        aspectRatio: kIsWeb
-            ? _controller.value.aspectRatio.clamp(4 / 5, double.infinity)
-            : _controller.value.aspectRatio,
-        child: GestureDetector(
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              VideoPlayer(_controller),
-              if(widget.showProgress) VideoProgressIndicator(
-                _controller,
-                allowScrubbing: true,
-                colors: const VideoProgressColors(
-                  playedColor: Colors.red,
-                  bufferedColor: Colors.grey,
-                ),
-              ),
-              Positioned(
-                bottom: 10,
-                right: 10,
+    if (kIsWeb) {
+      final isVertical = _controller.value.isInitialized && _controller.value.aspectRatio < 1.1;
+      final fit = widget.isFullscreen
+          ? BoxFit.contain
+          : (isVertical ? BoxFit.contain : BoxFit.cover);
+
+      return Obx(() {
+        final isUrlInFullscreen = NeomVideoPlayer._fullscreenUrls.contains(widget.videoUrl);
+        final showPlaceholder = _isFullScreenActive || 
+                               widget.isTransitioning || 
+                               (isUrlInFullscreen && !widget.isFullscreen);
+
+        return isInitialized.value
+            ? SizedBox.expand(
                 child: GestureDetector(
-                  onTap: () {
-                    isMuted.toggle();
-                    _controller.setVolume(isMuted.value ? 0 : 1);
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black54,
-                    radius: 15,
-                    child: Icon(
-                      isMuted.value ? Icons.volume_off : Icons.volume_up,
-                      color: Colors.white,
-                      size: 20,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Hero(
+                        tag: 'video-hero-${widget.videoUrl}',
+                        child: showPlaceholder
+                            ? HandledCachedNetworkImage(
+                                widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl,
+                                fit: fit,
+                              )
+                            : SizedBox.expand(
+                                child: FittedBox(
+                                  fit: fit,
+                                  clipBehavior: Clip.hardEdge,
+                                  child: SizedBox(
+                                    width: _controller.value.size.width,
+                                    height: _controller.value.size.height,
+                                    child: VideoPlayer(_controller),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    if (widget.showProgress)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: VideoProgressIndicator(
+                          _controller,
+                          allowScrubbing: true,
+                          colors: const VideoProgressColors(
+                            playedColor: Colors.red,
+                            bufferedColor: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: GestureDetector(
+                        onTap: () {
+                          NeomVideoPlayer.isGlobalMuted.toggle();
+                        },
+                        child: Obx(() => CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          radius: 16,
+                          child: Icon(
+                            NeomVideoPlayer.isGlobalMuted.value ? Icons.volume_off : Icons.volume_up,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        )),
+                      ),
                     ),
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: GestureDetector(
+                        onTap: widget.onFullScreenTap != null
+                            ? widget.onFullScreenTap
+                            : () async {
+                                setState(() => _isFullScreenActive = true);
+                                await Sint.to(() => FullScreenVideoPage(controller: _controller),
+                                    transition: Transition.zoom);
+                                if (mounted) setState(() => _isFullScreenActive = false);
+                              },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          radius: 16,
+                          child: Icon(
+                            widget.isFullscreen
+                                ? Icons.fullscreen_exit_rounded
+                                : Icons.fullscreen_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: () async {
+                  if (_controller.value.isPlaying) {
+                    _controller.pause();
+                  } else {
+                    _controller.play();
+                  }
+                },
+                onDoubleTap: widget.onFullScreenTap != null
+                    ? widget.onFullScreenTap
+                    : () async {
+                        setState(() => _isFullScreenActive = true);
+                        await Sint.to(() => FullScreenVideoPage(controller: _controller),
+                            transition: Transition.zoom);
+                        if (mounted) setState(() => _isFullScreenActive = false);
+                      },
+              ),
+            )
+          : Stack(
+              alignment: Alignment.center,
+              children: [
+                HandledCachedNetworkImage(widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            );
+      });
+    }
+
+    return Obx(() {
+      final isUrlInFullscreen = NeomVideoPlayer._fullscreenUrls.contains(widget.videoUrl);
+      final showPlaceholder = _isFullScreenActive || 
+                             widget.isTransitioning || 
+                             (isUrlInFullscreen && !widget.isFullscreen);
+
+      return isInitialized.value
+          ? Center(
+              child: AspectRatio(
+                key: widget.videoKey,
+                aspectRatio: _controller.value.aspectRatio,
+                child: GestureDetector(
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Hero(
+                        tag: 'video-hero-${widget.videoUrl}',
+                        child: showPlaceholder
+                            ? HandledCachedNetworkImage(
+                                widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl,
+                                fit: BoxFit.cover,
+                              )
+                            : VideoPlayer(_controller),
+                      ),
+                      if (widget.showProgress)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: VideoProgressIndicator(
+                            _controller,
+                            allowScrubbing: true,
+                            colors: const VideoProgressColors(
+                              playedColor: Colors.red,
+                              bufferedColor: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        bottom: 10,
+                        right: 10,
+                        child: GestureDetector(
+                          onTap: () {
+                            NeomVideoPlayer.isGlobalMuted.toggle();
+                          },
+                          child: Obx(() => CircleAvatar(
+                            backgroundColor: Colors.black54,
+                            radius: 16,
+                            child: Icon(
+                              NeomVideoPlayer.isGlobalMuted.value ? Icons.volume_off : Icons.volume_up,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          )),
+                        ),
+                      ),
+                    ],
                   ),
+                  onTap: () async {
+                    if (NeomVideoPlayer.isGlobalMuted.value) {
+                      NeomVideoPlayer.isGlobalMuted.value = false;
+                    }
+                    setState(() => _isFullScreenActive = true);
+                    await Sint.to(() => FullScreenVideoPage(controller: _controller),
+                        transition: Transition.zoom);
+                    if (mounted) setState(() => _isFullScreenActive = false);
+                  },
                 ),
               ),
-              Obx(()=> (Sint.find<AudioHandlerService>().isPlaying) ?
-                Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0x36FFFFFF).withValues(alpha: 0.1),
-                          const Color(0x0FFFFFFF).withValues(alpha: 0.1)
-                        ],
-                        begin: FractionalOffset.topLeft,
-                        end: FractionalOffset.bottomRight
-                      ),
-                      borderRadius: BorderRadius.circular(50)
-                    ),
-                    child: Icon(Icons.play_arrow, size: 60,),
-                  ),
-                ) : SizedBox.shrink()
-              ),
-            ],
-          ),
-          onTap: () {
-            if(isMuted.value) {
-              _controller.setVolume(1);
-              isMuted.value = false;
-            }
-            Sint.to(() => FullScreenVideoPage(controller: _controller),
-                transition: Transition.zoom);
-          },
-        )
-      ) : Stack(
-      alignment: Alignment.center,
-      children: [
-        HandledCachedNetworkImage(widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl),
-        const Center(child: CircularProgressIndicator()),
-      ],)
-    );
+            )
+          : Stack(
+              alignment: Alignment.center,
+              children: [
+                HandledCachedNetworkImage(widget.thumbnailUrl.isNotEmpty ? widget.thumbnailUrl : widget.videoUrl),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            );
+    });
   }
-
-
 }

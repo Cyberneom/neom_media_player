@@ -2,6 +2,10 @@
 
 All notable changes to neom_media_player will be documented in this file.
 
+## [1.4.1] - 2026-07-16
+- Add mutual exclusion video/audio muting in MediaPlayerController.
+- Handle dynamic mute state inside NeomVideoPlayer.
+
 ## [1.2.0] - 2025-02-09
 
 ### Changed

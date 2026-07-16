@@ -9,6 +9,7 @@ import 'package:neom_core/domain/use_cases/media_player_service.dart';
 import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'neom_video_player.dart';
 
 class MediaPlayerController extends SintController implements MediaPlayerService {
 
@@ -137,6 +138,11 @@ class MediaPlayerController extends SintController implements MediaPlayerService
     _videoControllers[ytUrl] = ytController;
   }
 
+  void unregisterVideoKeyController(String ytUrl) {
+    _videoKeys.remove(ytUrl);
+    _videoControllers.remove(ytUrl);
+  }
+
   void registerYouTubeKeyController(String ytUrl, GlobalKey ytKey, YoutubePlayerController ytController) {
     _youtubeKeys[ytUrl] = ytKey;
     _youtubeControllers[ytUrl] = ytController;
@@ -207,4 +213,8 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   @override
   Map<String, GlobalKey<State<StatefulWidget>>> get youtubeKeys => _youtubeKeys;
 
+  @override
+  void muteVideoPlayer() {
+    NeomVideoPlayer.isGlobalMuted.value = true;
+  }
 }
