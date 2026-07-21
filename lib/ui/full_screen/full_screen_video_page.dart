@@ -70,15 +70,37 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
 
     _animationController.forward();
 
-    if(widget.controller != null) {
+    if (widget.controller != null) {
       controller = widget.controller!;
+      if (controller.value.isInitialized) {
+        isLoading = false;
+        isPlaying = controller.value.isPlaying;
+        aspectRatio = controller.value.aspectRatio;
+        currentOrientation = DeviceOrientation.portraitUp;
+        if (!controller.value.isPlaying) {
+          controller.play().then((_) {
+            if (mounted) setState(() => isPlaying = true);
+          });
+        }
+      } else {
+        controller.initialize().then((_) {
+          DeviceOrientation orientation = DeviceOrientation.portraitUp;
+          if (mounted && controller.value.isInitialized) {
+            controller.play().then((_) {
+              setState(() {
+                isLoading = false;
+                isPlaying = true;
+                aspectRatio = controller.value.aspectRatio;
+                currentOrientation = orientation;
+              });
+            });
+          }
+        });
+      }
     } else {
       controller = VideoPlayerController.networkUrl(Uri.parse(widget.mediaUrl ?? ''));
-    }
-
-    controller.initialize().then((_) {
+      controller.initialize().then((_) {
         DeviceOrientation orientation = DeviceOrientation.portraitUp;
-
         if (mounted && controller.value.isInitialized) {
           controller.play().then((_) {
             setState(() {
@@ -90,6 +112,7 @@ class FullScreenVideoPageState extends State<FullScreenVideoPage> with SingleTic
           });
         }
       });
+    }
 
     durationStream = Stream<Duration>.periodic(const Duration(seconds: 1), (data) {
       return controller.value.position;

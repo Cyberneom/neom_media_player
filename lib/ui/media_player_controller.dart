@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'dart:async';
 import 'package:neom_core/utils/platform/core_io.dart';
 
 import 'package:flutter/material.dart';
@@ -28,6 +29,10 @@ class MediaPlayerController extends SintController implements MediaPlayerService
 
   final Map<String, YoutubePlayerController> _youtubeControllers = {}; // Nuevo mapa para almacenar claves de video
   final Map<String, VideoPlayerController> _videoControllers = {}; // Nuevo mapa para almacenar claves de video
+
+  final Map<String, dynamic> _lazyPlayers = {}; // Mapa para almacenar estados lazy
+  final Map<String, GlobalKey> _lazyKeys = {}; // Mapa para almacenar claves lazy
+  Timer? _visibleVideoTimer;
 
   @override
   void onInit() async {
@@ -84,10 +89,10 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   void disposeVideoPlayer() {
     if(videoPlayerController?.value.isInitialized ?? false) {
       if(videoPlayerController?.value.isPlaying ?? false) videoPlayerController?.pause();
-      videoPlayerController = VideoPlayerController.networkUrl(Uri());
-      videoPlayerController?.dispose();
+      final oldController = videoPlayerController;
+      videoPlayerController = null;
+      oldController?.dispose();
     }
-
   }
 
   ///DEPRECATED
@@ -133,9 +138,38 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   double get aspectRatio => _aspectRatio;
 
 
+  void registerLazyPlayer(String url, dynamic state, GlobalKey key) {
+    _lazyPlayers[url] = state;
+    _lazyKeys[url] = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      visibleVideoAction();
+    });
+  }
+
+  void unregisterLazyPlayer(String url) {
+    _lazyPlayers.remove(url);
+    _lazyKeys.remove(url);
+  }
+
+  void preloadLazyPlayer(String url) {
+    final playerState = _lazyPlayers[url];
+    if (playerState != null) {
+      try {
+        (playerState as dynamic).initializePlayer();
+      } catch (e) {
+        AppConfig.logger.w("MediaPlayerController: Failed to call initializePlayer on lazy player: $e");
+      }
+    }
+  }
+
   void registerVideoKeyController(String ytUrl, GlobalKey ytKey, VideoPlayerController ytController) {
+    _lazyPlayers.remove(ytUrl);
+    _lazyKeys.remove(ytUrl);
     _videoKeys[ytUrl] = ytKey;
     _videoControllers[ytUrl] = ytController;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      visibleVideoAction();
+    });
   }
 
   void unregisterVideoKeyController(String ytUrl) {
@@ -146,11 +180,57 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   void registerYouTubeKeyController(String ytUrl, GlobalKey ytKey, YoutubePlayerController ytController) {
     _youtubeKeys[ytUrl] = ytKey;
     _youtubeControllers[ytUrl] = ytController;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      visibleVideoAction();
+    });
   }
 
   @override
   void visibleVideoAction() {
+    _visibleVideoTimer?.cancel();
+    _visibleVideoTimer = Timer(const Duration(milliseconds: 150), () {
+      _executeVisibleVideoAction();
+    });
+  }
+
+  void _executeVisibleVideoAction() {
     try {
+      final isMusicPlaying = Sint.find<AudioHandlerService>().isPlaying;
+      if (!isMusicPlaying && _lazyKeys.isNotEmpty) {
+        final lazyUrls = _lazyKeys.keys.toList();
+        for (final keyUrl in lazyUrls) {
+          final entry = _lazyKeys[keyUrl];
+          if (entry == null) continue;
+
+          final context = entry.currentContext;
+          if (context == null) continue;
+
+          final renderObject = context.findRenderObject();
+          if (renderObject == null || !renderObject.attached || renderObject is! RenderBox) continue;
+
+          final RenderBox renderBox = renderObject;
+          final position = renderBox.localToGlobal(Offset.zero);
+          final videoSize = renderBox.size;
+
+          final screenHeight = MediaQuery.of(Sint.context!).size.height;
+          final screenWidth = MediaQuery.of(Sint.context!).size.width;
+
+          final videoCenterY = position.dy + (videoSize.height / 2);
+          final videoCenterX = position.dx + (videoSize.width / 2);
+
+          final isVisibleY = videoCenterY > 0 && videoCenterY < screenHeight;
+          final isVisibleX = videoCenterX > 0 && videoCenterX < screenWidth;
+
+          if (isVisibleY && isVisibleX) {
+            final playerState = _lazyPlayers[keyUrl];
+            if (playerState != null) {
+              AppConfig.logger.t('NeomVideoPlayer: Lazy initializing visible video: $keyUrl');
+              playerState.initializePlayer();
+            }
+          }
+        }
+      }
+
       _handleVideoVisibility(_videoKeys, _videoControllers);
       _handleVideoVisibility(_youtubeKeys, _youtubeControllers);
     } catch (e, st) {
@@ -159,45 +239,64 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   }
 
   void _handleVideoVisibility<T>(Map<String, GlobalKey> keys, Map<String, T> controllers) {
-
-    if(Sint.find<AudioHandlerService>().isPlaying) return;
+    final isMusicPlaying = Sint.find<AudioHandlerService>().isPlaying;
+    AppConfig.logger.t('NeomVideoPlayer: _handleVideoVisibility invoked. isMusicPlaying=$isMusicPlaying, keysCount=${keys.length}');
+    if(isMusicPlaying) return;
 
     for (int i = 0; i < keys.length; i++) {
+      final keyUrl = keys.keys.elementAt(i);
       final entry = keys.values.elementAt(i);
 
       final context = entry.currentContext;
-      if (context == null) continue;
+      if (context == null) {
+        AppConfig.logger.t('NeomVideoPlayer: context is null for keyUrl=$keyUrl');
+        continue;
+      }
 
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final renderObject = context.findRenderObject();
+      if (renderObject == null || !renderObject.attached || renderObject is! RenderBox) {
+        AppConfig.logger.t('NeomVideoPlayer: renderObject is invalid or not attached for keyUrl=$keyUrl');
+        continue;
+      }
+      final RenderBox renderBox = renderObject;
       final position = renderBox.localToGlobal(Offset.zero);
+      final videoSize = renderBox.size;
 
-      final videoHeight = renderBox.size.height;
       final screenHeight = MediaQuery.of(Sint.context!).size.height;
+      final screenWidth = MediaQuery.of(Sint.context!).size.width;
 
       // Calcular el centro del video
-      final videoCenter = position.dy + (videoHeight / 2);
+      final videoCenterY = position.dy + (videoSize.height / 2);
+      final videoCenterX = position.dx + (videoSize.width / 2);
 
-      // Definir un margen de tolerancia (por ejemplo, 75% arriba/abajo del centro)
-      final visibilityMargin = screenHeight * videoThreshold;
+      // El video es visible para reproducción si está predominantemente centrado en el viewport.
+      // Esto evita la reproducción simultánea de múltiples videos durante transiciones de scroll o PageViews horizontales.
+      final isVisibleY = (videoCenterY - (screenHeight / 2)).abs() < (screenHeight * 0.4);
+      final isVisibleX = (videoCenterX - (screenWidth / 2)).abs() < (screenWidth * 0.35);
 
-      // Verifica si el centro del video está dentro del área de visibilidad
-      final isVisible = videoCenter > (screenHeight / 2) - visibilityMargin &&
-          videoCenter < (screenHeight / 2) + visibilityMargin;
+      final isVisible = isVisibleY && isVisibleX;
+      AppConfig.logger.t('NeomVideoPlayer: keyUrl=$keyUrl. position=($position), size=($videoSize), screen=($screenWidth, $screenHeight), isVisible=$isVisible (Y=$isVisibleY, X=$isVisibleX)');
 
-      final controller = controllers[keys.keys.elementAt(i)];
-
-      if (controller == null) continue;
+      final controller = controllers[keyUrl];
+      if (controller == null) {
+        AppConfig.logger.t('NeomVideoPlayer: controller is null for keyUrl=$keyUrl');
+        continue;
+      }
 
       if (controller is VideoPlayerController) {
         if (isVisible && !controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Play video for keyUrl=$keyUrl');
           controller.play();
         } else if (!isVisible && controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Pause video for keyUrl=$keyUrl');
           controller.pause();
         }
       } else if (controller is YoutubePlayerController) {
         if (isVisible && !controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Play YouTube for keyUrl=$keyUrl');
           controller.play();
         } else if (!isVisible && controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Pause YouTube for keyUrl=$keyUrl');
           controller.pause();
         }
       }

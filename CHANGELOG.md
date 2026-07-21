@@ -1,5 +1,8 @@
 # Changelog
 
+## [2.0.0-unreleased] - 2026-07-21
+- Refactor and compatibility updates for full_screen_video_page.dart, media_player_controller.dart, neom_video_player.dart, neom_youtube_player.dart, pubspec.lock and 5 more.
+
 All notable changes to neom_media_player will be documented in this file.
 
 ## [1.4.1] - 2026-07-16

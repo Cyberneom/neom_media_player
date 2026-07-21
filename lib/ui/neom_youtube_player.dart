@@ -1,12 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'media_player_controller.dart';
+import 'neom_video_player.dart';
 
 class NeomYoutubePlayer extends StatefulWidget {
   final String youtubeUrl;
   final GlobalKey youtubeKey; // ✅ Nuevo parámetro para la clave única
+
+  static final Map<String, YoutubePlayerController> _youtubeControllers = {};
+
+  static YoutubePlayerController? getYoutubeController(String url) {
+    return _youtubeControllers[url];
+  }
 
   const NeomYoutubePlayer({required this.youtubeUrl, required this.youtubeKey, super.key});
 
@@ -17,6 +26,7 @@ class NeomYoutubePlayer extends StatefulWidget {
 class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
   YoutubePlayerController? controller;
   String videoId = '';
+  StreamSubscription<bool>? _muteSubscription;
 
   @override
   void initState() {
@@ -26,8 +36,21 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
     if(videoId.isNotEmpty) {
       controller = YoutubePlayerController(
         initialVideoId: videoId,
-        flags: const YoutubePlayerFlags(autoPlay: false),
+        flags: YoutubePlayerFlags(
+          autoPlay: false,
+          mute: NeomVideoPlayer.isGlobalMuted.value,
+        ),
       );
+      NeomYoutubePlayer._youtubeControllers[widget.youtubeUrl] = controller!;
+
+      // Sincronizar el estado de mute/silencio global de la app
+      _muteSubscription = NeomVideoPlayer.isGlobalMuted.listen((isMuted) {
+        if (isMuted) {
+          controller?.mute();
+        } else {
+          controller?.unMute();
+        }
+      });
 
       // Registrar el controlador en el TimelineController
       if (Sint.isRegistered<MediaPlayerController>() && controller != null) {
@@ -49,6 +72,8 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
 
   @override
   void dispose() {
+    _muteSubscription?.cancel();
+    NeomYoutubePlayer._youtubeControllers.remove(widget.youtubeUrl);
     controller?.dispose();
     super.dispose();
   }
