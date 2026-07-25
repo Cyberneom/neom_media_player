@@ -20,8 +20,8 @@ dependencies:
       url: git@github.com:Cyberneom/neom_commons.git
 
 
-  video_player: ^2.9.5
-  youtube_player_flutter: ^9.1.1
+  video_player: ^2.13.0
+  youtube_player_flutter: ^10.0.1
   http: ^1.6.0
 
 dev_dependencies:
