@@ -101,12 +101,12 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
         ),
         const SizedBox(width: 10.0),
       ],
-      bottomActions: const [
-        SizedBox(width: 10),
+      bottomActions: [
+        const SizedBox(width: 10),
         CurrentPosition(),
         ProgressBar(isExpanded: true,),
         RemainingDuration(),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
       ],
       onReady: () {},
     ) : const SizedBox.shrink();
