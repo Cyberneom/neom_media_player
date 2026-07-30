@@ -249,29 +249,51 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
     }
   }
 
+  void _safeSetRxBool(RxBool rx, bool value) {
+    if (rx.value != value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) rx.value = value;
+      });
+    }
+  }
+
+  void _safeAddFullscreenUrl(String url) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NeomVideoPlayer._fullscreenUrls.add(url);
+    });
+  }
+
+  void _safeRemoveFullscreenUrl(String url) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NeomVideoPlayer._fullscreenUrls.remove(url);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _videoKey = widget.videoKey ?? GlobalKey();
     if (widget.isFullscreen) {
-      NeomVideoPlayer._fullscreenUrls.add(widget.videoUrl);
+      _safeAddFullscreenUrl(widget.videoUrl);
     }
 
     if (widget.controller != null) {
       _controller = widget.controller!;
       _isControllerLocal = false;
-      isControllerCreated.value = true;
+      _safeSetRxBool(isControllerCreated, true);
       _controller.removeListener(_videoPlayerListener);
       _controller.addListener(_videoPlayerListener);
-      isInitialized.value = _controller.value.isInitialized;
-      if (isInitialized.value) {
+      _safeSetRxBool(isInitialized, _controller.value.isInitialized);
+      if (_controller.value.isInitialized) {
         _controller.setVolume(NeomVideoPlayer.isGlobalMuted.value ? 0 : 1);
         _healPostAspectRatio(_controller.value.aspectRatio);
       } else {
         _controller.initialize().timeout(const Duration(seconds: 15)).then((_) {
-          isInitialized.value = true;
-          _controller.setVolume(NeomVideoPlayer.isGlobalMuted.value ? 0 : 1);
-          _healPostAspectRatio(_controller.value.aspectRatio);
+          if (mounted) {
+            isInitialized.value = true;
+            _controller.setVolume(NeomVideoPlayer.isGlobalMuted.value ? 0 : 1);
+            _healPostAspectRatio(_controller.value.aspectRatio);
+          }
         }).catchError((e) {
           print('NeomVideoPlayer: Failed to initialize external controller: $e');
         });
@@ -283,7 +305,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
       final cached = kIsWeb ? NeomVideoPlayer._webVideoCache[widget.videoUrl] : null;
       if (cached != null && cached.value.isInitialized) {
         _controller = cached;
-        isControllerCreated.value = true;
+        _safeSetRxBool(isControllerCreated, true);
         _isControllerLocal = true;
         if (kIsWeb) {
           NeomVideoPlayer._webVideoRefCount[widget.videoUrl] =
@@ -291,7 +313,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
         }
         _controller.removeListener(_videoPlayerListener);
         _controller.addListener(_videoPlayerListener);
-        isInitialized.value = true;
+        _safeSetRxBool(isInitialized, true);
         _controller.setVolume(NeomVideoPlayer.isGlobalMuted.value ? 0 : 1);
         _healPostAspectRatio(_controller.value.aspectRatio);
 
@@ -348,7 +370,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
 
   void _cleanup(String url) {
     if (widget.isFullscreen) {
-      NeomVideoPlayer._fullscreenUrls.remove(url);
+      _safeRemoveFullscreenUrl(url);
     }
     if (Sint.isRegistered<MediaPlayerController>()) {
       final mediaPlayerController = Sint.find<MediaPlayerController>();
@@ -389,14 +411,14 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
       _cleanup(oldWidget.videoUrl);
 
       // Reset state flags
-      isInitialized.value = false;
-      isControllerCreated.value = false;
-      hasError.value = false;
+      _safeSetRxBool(isInitialized, false);
+      _safeSetRxBool(isControllerCreated, false);
+      _safeSetRxBool(hasError, false);
       _isInitializing = false;
       _videoKey = widget.videoKey ?? GlobalKey();
 
       if (widget.isFullscreen) {
-        NeomVideoPlayer._fullscreenUrls.add(widget.videoUrl);
+        _safeAddFullscreenUrl(widget.videoUrl);
       }
 
       if (widget.controller != null) {
