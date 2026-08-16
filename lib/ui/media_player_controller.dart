@@ -215,13 +215,11 @@ class MediaPlayerController extends SintController implements MediaPlayerService
           final screenHeight = MediaQuery.of(Sint.context!).size.height;
           final screenWidth = MediaQuery.of(Sint.context!).size.width;
 
-          final videoCenterY = position.dy + (videoSize.height / 2);
-          final videoCenterX = position.dx + (videoSize.width / 2);
+          // Eagerly initialize lazy videos that are on screen or near viewport (buffer of 400px)
+          final isNearY = position.dy + videoSize.height > -400 && position.dy < screenHeight + 400;
+          final isNearX = position.dx + videoSize.width > -400 && position.dx < screenWidth + 400;
 
-          final isVisibleY = videoCenterY > 0 && videoCenterY < screenHeight;
-          final isVisibleX = videoCenterX > 0 && videoCenterX < screenWidth;
-
-          if (isVisibleY && isVisibleX) {
+          if (isNearY && isNearX) {
             final playerState = _lazyPlayers[keyUrl];
             if (playerState != null) {
               AppConfig.logger.t('NeomVideoPlayer: Lazy initializing visible video: $keyUrl');
@@ -240,63 +238,69 @@ class MediaPlayerController extends SintController implements MediaPlayerService
 
   void _handleVideoVisibility<T>(Map<String, GlobalKey> keys, Map<String, T> controllers) {
     final isMusicPlaying = Sint.find<AudioHandlerService>().isPlaying;
-    AppConfig.logger.t('NeomVideoPlayer: _handleVideoVisibility invoked. isMusicPlaying=$isMusicPlaying, keysCount=${keys.length}');
-    if(isMusicPlaying) return;
+    if (isMusicPlaying) return;
 
+    final screenHeight = MediaQuery.of(Sint.context!).size.height;
+    final screenWidth = MediaQuery.of(Sint.context!).size.width;
+
+    String? bestKeyUrl;
+    double minDistanceSq = double.infinity;
+
+    // Step 1: Find the single video closest to the center of the viewport
     for (int i = 0; i < keys.length; i++) {
       final keyUrl = keys.keys.elementAt(i);
       final entry = keys.values.elementAt(i);
 
       final context = entry.currentContext;
-      if (context == null) {
-        AppConfig.logger.t('NeomVideoPlayer: context is null for keyUrl=$keyUrl');
-        continue;
-      }
+      if (context == null) continue;
 
       final renderObject = context.findRenderObject();
-      if (renderObject == null || !renderObject.attached || renderObject is! RenderBox) {
-        AppConfig.logger.t('NeomVideoPlayer: renderObject is invalid or not attached for keyUrl=$keyUrl');
-        continue;
-      }
+      if (renderObject == null || !renderObject.attached || renderObject is! RenderBox) continue;
+
       final RenderBox renderBox = renderObject;
       final position = renderBox.localToGlobal(Offset.zero);
       final videoSize = renderBox.size;
 
-      final screenHeight = MediaQuery.of(Sint.context!).size.height;
-      final screenWidth = MediaQuery.of(Sint.context!).size.width;
-
-      // Calcular el centro del video
       final videoCenterY = position.dy + (videoSize.height / 2);
       final videoCenterX = position.dx + (videoSize.width / 2);
 
-      // El video es visible para reproducción si está predominantemente centrado en el viewport.
-      // Esto evita la reproducción simultánea de múltiples videos durante transiciones de scroll o PageViews horizontales.
-      final isVisibleY = (videoCenterY - (screenHeight / 2)).abs() < (screenHeight * 0.4);
-      final isVisibleX = (videoCenterX - (screenWidth / 2)).abs() < (screenWidth * 0.35);
+      final dy = videoCenterY - (screenHeight / 2);
+      final dx = videoCenterX - (screenWidth / 2);
 
-      final isVisible = isVisibleY && isVisibleX;
-      AppConfig.logger.t('NeomVideoPlayer: keyUrl=$keyUrl. position=($position), size=($videoSize), screen=($screenWidth, $screenHeight), isVisible=$isVisible (Y=$isVisibleY, X=$isVisibleX)');
+      final isVisibleY = dy.abs() < (screenHeight * 0.45);
+      final isVisibleX = dx.abs() < (screenWidth * 0.45);
 
-      final controller = controllers[keyUrl];
-      if (controller == null) {
-        AppConfig.logger.t('NeomVideoPlayer: controller is null for keyUrl=$keyUrl');
-        continue;
+      if (isVisibleY && isVisibleX) {
+        final distSq = (dx * dx) + (dy * dy);
+        if (distSq < minDistanceSq) {
+          minDistanceSq = distSq;
+          bestKeyUrl = keyUrl;
+        }
       }
+    }
+
+    // Step 2: Play ONLY the best video, pause all other videos to prevent contention & audio clashes
+    for (int i = 0; i < keys.length; i++) {
+      final keyUrl = keys.keys.elementAt(i);
+      final controller = controllers[keyUrl];
+      if (controller == null) continue;
+
+      final shouldPlay = (keyUrl == bestKeyUrl);
 
       if (controller is VideoPlayerController) {
-        if (isVisible && !controller.value.isPlaying) {
-          AppConfig.logger.d('NeomVideoPlayer: Play video for keyUrl=$keyUrl');
+        if (shouldPlay && !controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Play single active video for keyUrl=$keyUrl');
           controller.play();
-        } else if (!isVisible && controller.value.isPlaying) {
-          AppConfig.logger.d('NeomVideoPlayer: Pause video for keyUrl=$keyUrl');
+        } else if (!shouldPlay && controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Pause inactive video for keyUrl=$keyUrl');
           controller.pause();
         }
       } else if (controller is YoutubePlayerController) {
-        if (isVisible && !controller.value.isPlaying) {
-          AppConfig.logger.d('NeomVideoPlayer: Play YouTube for keyUrl=$keyUrl');
+        if (shouldPlay && !controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Play single active YouTube for keyUrl=$keyUrl');
           controller.play();
-        } else if (!isVisible && controller.value.isPlaying) {
-          AppConfig.logger.d('NeomVideoPlayer: Pause YouTube for keyUrl=$keyUrl');
+        } else if (!shouldPlay && controller.value.isPlaying) {
+          AppConfig.logger.d('NeomVideoPlayer: Pause inactive YouTube for keyUrl=$keyUrl');
           controller.pause();
         }
       }

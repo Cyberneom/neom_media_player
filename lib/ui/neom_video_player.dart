@@ -98,18 +98,38 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
         !lowerUrl.contains('.3gp') &&
         !lowerUrl.contains('.mkv');
 
-    return hasThumbnail
-        ? HandledCachedNetworkImage(widget.thumbnailUrl, fit: fit)
-        : Container(
-            color: Colors.black87,
-            child: const Center(
-              child: Icon(
-                Icons.movie_creation_outlined,
-                color: Colors.white24,
-                size: 48,
-              ),
-            ),
-          );
+    if (hasThumbnail) {
+      return HandledCachedNetworkImage(widget.thumbnailUrl, fit: fit);
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF141927),
+            Color(0xFF0D111A),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          ),
+          child: const Icon(
+            Icons.play_arrow_rounded,
+            color: Colors.white70,
+            size: 30,
+          ),
+        ),
+      ),
+    );
   }
 
   void initializePlayer() {
