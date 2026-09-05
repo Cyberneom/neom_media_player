@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/model/post.dart';
-import 'package:neom_core/data/firestore/post_firestore.dart';
 import 'package:neom_core/domain/use_cases/timeline_service.dart';
 import 'package:neom_core/app_config.dart';
-import 'package:neom_core/utils/neom_error_logger.dart';
 import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 
@@ -360,20 +358,13 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
     });
   }
 
-  void _healPostAspectRatio(double realRatio) async {
+  void _healPostAspectRatio(double realRatio) {
     if (widget.post != null) {
       final oldRatio = widget.post!.aspectRatio;
       if (oldRatio == 1.0 || oldRatio == 0.0) {
         if ((realRatio - 1.0).abs() > 0.05) {
           widget.post!.aspectRatio = realRatio;
           AppConfig.logger.d("Healed aspect ratio in memory for post ${widget.post!.id} to $realRatio");
-
-          try {
-            await PostFirestore().updateFields(widget.post!.id, {'aspectRatio': realRatio});
-            AppConfig.logger.d("Healed aspect ratio in Firestore for post ${widget.post!.id} to $realRatio");
-          } catch (e, st) {
-            NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'healPostAspectRatioFirestore');
-          }
 
           if (Sint.isRegistered<TimelineService>()) {
             final service = Sint.find<TimelineService>();
