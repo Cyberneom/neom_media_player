@@ -1,15 +1,16 @@
-import 'dart:core';
 import 'dart:async';
-import 'package:neom_core/utils/platform/core_io.dart';
+import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:neom_core/app_config.dart';
-import 'package:neom_core/utils/neom_error_logger.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/use_cases/media_player_service.dart';
+import 'package:neom_core/utils/neom_error_logger.dart';
+import 'package:neom_core/utils/platform/core_io.dart';
 import 'package:sint/sint.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
 import 'neom_video_player.dart';
 
 class MediaPlayerController extends SintController implements MediaPlayerService {
@@ -181,8 +182,23 @@ class MediaPlayerController extends SintController implements MediaPlayerService
     _youtubeKeys[ytUrl] = ytKey;
     _youtubeControllers[ytUrl] = ytController;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      visibleVideoAction();
+      if (identical(_youtubeControllers[ytUrl], ytController)) {
+        visibleVideoAction();
+      }
     });
+  }
+
+  void unregisterYouTubeKeyController(String url, YoutubePlayerController controller) {
+    // A second card/modal can own a newer controller for the same URL.
+    if (!identical(_youtubeControllers[url], controller)) return;
+    _youtubeKeys.remove(url);
+    _youtubeControllers.remove(url);
+  }
+
+  @override
+  void onClose() {
+    _visibleVideoTimer?.cancel();
+    super.onClose();
   }
 
   @override
