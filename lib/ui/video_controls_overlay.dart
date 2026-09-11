@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:sint/sint.dart';
-import 'package:neom_media_player/ui/neom_video_player.dart';
+import 'neom_video_player.dart';
 
 class VideoControlsOverlay extends StatefulWidget {
   final VideoPlayerController controller;
@@ -96,6 +96,7 @@ class _VideoControlsOverlayState extends State<VideoControlsOverlay> {
                     if (widget.controller.value.isPlaying) {
                       widget.controller.pause();
                     } else {
+                      NeomVideoPlayer.pauseAllExcept(widget.controller);
                       widget.controller.play();
                     }
                     _showControls();
@@ -158,6 +159,7 @@ class _VideoControlsOverlayState extends State<VideoControlsOverlay> {
                               if (widget.controller.value.isPlaying) {
                                 widget.controller.pause();
                               } else {
+                                NeomVideoPlayer.pauseAllExcept(widget.controller);
                                 widget.controller.play();
                               }
                             },

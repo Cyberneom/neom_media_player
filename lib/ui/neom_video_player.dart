@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:neom_commons/ui/widgets/images/handled_cached_network_image.dart';
 import 'package:neom_core/domain/use_cases/audio_handler_service.dart';
 import 'package:neom_core/domain/model/post.dart';
+import 'package:neom_core/domain/use_cases/media_player_service.dart';
 import 'package:neom_core/domain/use_cases/timeline_service.dart';
 import 'package:neom_core/app_config.dart';
 import 'package:sint/sint.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 
 import 'full_screen/full_screen_video_page.dart';
 import 'media_player_controller.dart';
+import 'neom_youtube_player.dart';
 import 'video_controls_overlay.dart';
 import 'video_url_helper_stub.dart'
     if (dart.library.html) 'video_url_helper_web.dart';
@@ -36,6 +38,41 @@ class NeomVideoPlayer extends StatefulWidget {
   // Static cache to keep video controllers alive and reuse them on Web
   static final Map<String, VideoPlayerController> _webVideoCache = {};
   static final Map<String, int> _webVideoRefCount = {};
+  static final Set<VideoPlayerController> _allActiveControllers = {};
+  static bool _isPausingAll = false;
+
+  static void registerActiveController(VideoPlayerController controller) {
+    _allActiveControllers.add(controller);
+  }
+
+  static void unregisterActiveController(VideoPlayerController controller) {
+    _allActiveControllers.remove(controller);
+  }
+
+  static void pauseAllExcept([VideoPlayerController? current]) {
+    if (_isPausingAll) return;
+    _isPausingAll = true;
+    try {
+      for (final ctrl in _allActiveControllers) {
+        if (ctrl != current && ctrl.value.isInitialized && ctrl.value.isPlaying) {
+          ctrl.pause();
+        }
+      }
+      for (final ctrl in _webVideoCache.values) {
+        if (ctrl != current && ctrl.value.isInitialized && ctrl.value.isPlaying) {
+          ctrl.pause();
+        }
+      }
+      NeomYoutubePlayer.pauseAll();
+      if (Sint.isRegistered<MediaPlayerService>()) {
+        Sint.find<MediaPlayerService>().pauseAllVideos(except: current);
+      }
+    } catch (e) {
+      AppConfig.logger.w("NeomVideoPlayer.pauseAllExcept error: $e");
+    } finally {
+      _isPausingAll = false;
+    }
+  }
 
   static VideoPlayerController? getVideoController(String url) {
     return _webVideoCache[url];
@@ -136,8 +173,11 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
   }
 
   void _videoPlayerListener() {
-    if (mounted && _controller.value.isPlaying && !NeomVideoPlayer.isGlobalMuted.value) {
-      _pauseMusicPlayer();
+    if (mounted && _controller.value.isPlaying) {
+      NeomVideoPlayer.pauseAllExcept(_controller);
+      if (!NeomVideoPlayer.isGlobalMuted.value) {
+        _pauseMusicPlayer();
+      }
     }
   }
 
@@ -148,6 +188,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
     final cached = NeomVideoPlayer._webVideoCache[widget.videoUrl];
     if (kIsWeb && cached != null) {
       _controller = cached;
+      NeomVideoPlayer.registerActiveController(_controller);
       isControllerCreated.value = true;
       _isControllerLocal = true;
       _controller.removeListener(_videoPlayerListener);
@@ -184,6 +225,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
           return;
         }
         _controller = VideoPlayerController.networkUrl(Uri.parse(playableUrl));
+        NeomVideoPlayer.registerActiveController(_controller);
         isControllerCreated.value = true;
         _controller.removeListener(_videoPlayerListener);
         _controller.addListener(_videoPlayerListener);
@@ -200,6 +242,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
             final mediaPlayerController = Sint.find<MediaPlayerController>();
             mediaPlayerController.registerVideoKeyController(widget.videoUrl, _videoKey, _controller);
           } else {
+            NeomVideoPlayer.pauseAllExcept(_controller);
             _controller.play(); // ▶️ Reproducir automáticamente
           }
         }).catchError((error) {
@@ -214,9 +257,11 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                   return;
                 }
                 // Dispose previous failed controller to prevent leak
+                NeomVideoPlayer.unregisterActiveController(_controller);
                 _controller.dispose();
 
                 _controller = VideoPlayerController.networkUrl(Uri.parse(blobUrl));
+                NeomVideoPlayer.registerActiveController(_controller);
                 if (kIsWeb) {
                   NeomVideoPlayer._webVideoCache[widget.videoUrl] = _controller;
                 }
@@ -233,6 +278,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                   if (Sint.isRegistered<MediaPlayerController>()) {
                     Sint.find<MediaPlayerController>().registerVideoKeyController(widget.videoUrl, _videoKey, _controller);
                   } else {
+                    NeomVideoPlayer.pauseAllExcept(_controller);
                     _controller.play();
                   }
                 }).catchError((blobError) {
@@ -298,6 +344,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
     if (widget.controller != null) {
       _controller = widget.controller!;
       _isControllerLocal = false;
+      NeomVideoPlayer.registerActiveController(_controller);
       _safeSetRxBool(isControllerCreated, true);
       _controller.removeListener(_videoPlayerListener);
       _controller.addListener(_videoPlayerListener);
@@ -323,6 +370,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
       final cached = kIsWeb ? NeomVideoPlayer._webVideoCache[widget.videoUrl] : null;
       if (cached != null && cached.value.isInitialized) {
         _controller = cached;
+        NeomVideoPlayer.registerActiveController(_controller);
         _safeSetRxBool(isControllerCreated, true);
         _isControllerLocal = true;
         if (kIsWeb) {
@@ -393,6 +441,9 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
         _controller.removeListener(_videoPlayerListener);
       } catch (_) {}
     }
+    if (isControllerCreated.value) {
+      NeomVideoPlayer.unregisterActiveController(_controller);
+    }
     if (kIsWeb && _isControllerLocal && isControllerCreated.value) {
       // Decrement reference count
       final count = (NeomVideoPlayer._webVideoRefCount[url] ?? 1) - 1;
@@ -435,6 +486,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
       if (widget.controller != null) {
         _controller = widget.controller!;
         _isControllerLocal = false;
+        NeomVideoPlayer.registerActiveController(_controller);
         isControllerCreated.value = true;
         _controller.removeListener(_videoPlayerListener);
         _controller.addListener(_videoPlayerListener);
@@ -548,6 +600,7 @@ class _NeomVideoPlayerState extends State<NeomVideoPlayer> {
                   if (_controller.value.isPlaying) {
                     _controller.pause();
                   } else {
+                    NeomVideoPlayer.pauseAllExcept(_controller);
                     _controller.play();
                   }
                   return KeyEventResult.handled;

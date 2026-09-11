@@ -27,6 +27,14 @@ class NeomYoutubePlayer extends StatefulWidget {
 
   static void pause(String url) => _players[url]?.last._pause();
 
+  static void pauseAll() {
+    for (final list in _players.values) {
+      for (final state in list) {
+        state._pause();
+      }
+    }
+  }
+
   const NeomYoutubePlayer({
     required this.youtubeUrl,
     this.youtubeKey,
@@ -95,6 +103,14 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer> {
   }
 
   void _play() {
+    NeomVideoPlayer.pauseAllExcept(null);
+    for (final list in NeomYoutubePlayer._players.values) {
+      for (final state in list) {
+        if (!identical(state, this)) {
+          state._pause();
+        }
+      }
+    }
     _webController?.playMuted();
     controller?.play();
   }

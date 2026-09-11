@@ -12,6 +12,7 @@ import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'neom_video_player.dart';
+import 'neom_youtube_player.dart';
 
 class MediaPlayerController extends SintController implements MediaPlayerService {
 
@@ -253,8 +254,12 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   }
 
   void _handleVideoVisibility<T>(Map<String, GlobalKey> keys, Map<String, T> controllers) {
-    final isMusicPlaying = Sint.find<AudioHandlerService>().isPlaying;
-    if (isMusicPlaying) return;
+    final isMusicPlaying = Sint.isRegistered<AudioHandlerService>() &&
+        Sint.find<AudioHandlerService>().isPlaying;
+    if (isMusicPlaying) {
+      pauseAllVideos();
+      return;
+    }
 
     final screenHeight = MediaQuery.of(Sint.context!).size.height;
     final screenWidth = MediaQuery.of(Sint.context!).size.width;
@@ -335,5 +340,28 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   @override
   void muteVideoPlayer() {
     NeomVideoPlayer.isGlobalMuted.value = true;
+  }
+
+  @override
+  void pauseAllVideos({dynamic except}) {
+    AppConfig.logger.d("MediaPlayerController: pauseAllVideos");
+    for (final controller in _videoControllers.values) {
+      if (controller != except && controller.value.isInitialized && controller.value.isPlaying) {
+        controller.pause();
+      }
+    }
+    for (final ytController in _youtubeControllers.values) {
+      if (ytController != except && ytController.value.isPlaying) {
+        ytController.pause();
+      }
+    }
+    NeomYoutubePlayer.pauseAll();
+    if (videoPlayerController != null && videoPlayerController != except) {
+      if (videoPlayerController!.value.isInitialized && videoPlayerController!.value.isPlaying) {
+        videoPlayerController!.pause();
+      }
+    }
+    NeomVideoPlayer.pauseAllExcept(except is VideoPlayerController ? except : null);
+    isPlaying.value = false;
   }
 }
