@@ -17,6 +17,7 @@ import 'neom_youtube_player.dart';
 class MediaPlayerController extends SintController implements MediaPlayerService {
 
   VideoPlayerController? videoPlayerController;
+  Completer<void>? _videoInitializationCancelled;
 
   double _aspectRatio = 1;
   String mediaUrl = "";
@@ -52,29 +53,63 @@ class MediaPlayerController extends SintController implements MediaPlayerService
   @override
   Future<void> initializeVideoPlayerController(File file) async {
     AppConfig.logger.d("initializeVideoPlayerController");
-
+    final previous = videoPlayerController;
+    _videoInitializationCancelled?.complete();
+    final cancelled = Completer<void>();
+    _videoInitializationCancelled = cancelled;
+    final next = VideoPlayerController.file(file as dynamic);
+    // Publish ownership before awaiting disposal/initialization. An older open
+    // may finish after a new selection or after this preview has been closed.
+    videoPlayerController = next;
+    isInitialized = false;
+    isPlaying.value = false;
+    _aspectRatio = 1;
+    if (previous != null) {
+      await Future.any<void>([_disposeVideoController(previous), cancelled.future]);
+    }
+    if (!identical(videoPlayerController, next)) return;
     try {
-      videoPlayerController = VideoPlayerController.file(file as dynamic);
-      await videoPlayerController?.initialize();
-
-      if(videoPlayerController?.value.isInitialized ?? false) {
-        isInitialized = true;
-        final videoSize = videoPlayerController!.value.size;
-        _aspectRatio = videoSize.width / videoSize.height;
+      await Future.any<void>([next.initialize(), cancelled.future]);
+      if (!identical(videoPlayerController, next)) return;
+      isInitialized = next.value.isInitialized;
+      if (isInitialized) {
+        final size = next.value.size;
+        _aspectRatio = size.height > 0 ? size.width / size.height : 1;
+        isPlaying.value = next.value.isPlaying;
       }
     } catch (e, st) {
+      if (identical(videoPlayerController, next)) {
+        videoPlayerController = null;
+        isInitialized = false;
+        isPlaying.value = false;
+        _aspectRatio = 1;
+        await _disposeVideoController(next);
+      }
       NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'initializeVideoPlayerController');
+    }
+  }
+
+  Future<void> _disposeVideoController(VideoPlayerController controller) async {
+    try {
+      print("DISPOSE_START ${controller.playerId}");
+      await controller.dispose();
+      print("DISPOSE_END ${controller.playerId}");
+    } catch (e, st) {
+      NeomErrorLogger.recordError(e, st, module: 'neom_media_player', operation: 'disposeVideoPlayer');
     }
   }
 
   @override
   Future<void> playPauseVideo() async {
-    AppConfig.logger.d("playPauseVideo");
-    (videoPlayerController?.value.isPlaying ?? false) ? await videoPlayerController?.pause() : videoPlayerController?.play();
-    AppConfig.logger.t("isPlaying ${videoPlayerController?.value.isPlaying}");
-
-    isPlaying.value = !isPlaying.value;
-    AppConfig.logger.d("isPlaying: $isPlaying");
+    final controller = videoPlayerController;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (controller.value.isPlaying) {
+      await controller.pause();
+    } else {
+      await controller.play();
+    }
+    if (!identical(videoPlayerController, controller)) return;
+    isPlaying.value = controller.value.isPlaying;
     update();
   }
 
@@ -89,12 +124,16 @@ class MediaPlayerController extends SintController implements MediaPlayerService
 
   @override
   void disposeVideoPlayer() {
-    if(videoPlayerController?.value.isInitialized ?? false) {
-      if(videoPlayerController?.value.isPlaying ?? false) videoPlayerController?.pause();
-      final oldController = videoPlayerController;
-      videoPlayerController = null;
-      oldController?.dispose();
-    }
+    final previous = videoPlayerController;
+    _videoInitializationCancelled?.complete();
+    _videoInitializationCancelled = null;
+    videoPlayerController = null;
+    isInitialized = false;
+    isPlaying.value = false;
+    _aspectRatio = 1;
+    // Uninitialized controllers can still own a pending native player. Release
+    // them too; VideoPlayerController handles its own creation completion.
+    if (previous != null) unawaited(_disposeVideoController(previous));
   }
 
   ///DEPRECATED
@@ -105,11 +144,12 @@ class MediaPlayerController extends SintController implements MediaPlayerService
 
   @override
   Widget getVideoPlayerAspectRatio() {
-    return isInitialized ? AspectRatio(
-    aspectRatio: videoPlayerController!.value.aspectRatio,
+    final controller = videoPlayerController;
+    return isInitialized && controller != null && controller.value.isInitialized ? AspectRatio(
+    aspectRatio: controller.value.aspectRatio,
     child: Stack(
           children: [
-            VideoPlayer(videoPlayerController!),
+            VideoPlayer(controller),
             Center(
               child: Container(
                 decoration: BoxDecoration(
