@@ -145,36 +145,10 @@ VisibilityDetector(
 )
 ```
 
-## ROADMAP 2026
-
-### Q1 2026 - Enhanced Player Features
-- [ ] Picture-in-picture mode
-- [ ] Background audio playback
-- [ ] Chromecast/AirPlay support
-- [ ] Playlist management
-
-### Q2 2026 - Quality & Performance
-- [ ] Adaptive bitrate streaming (HLS/DASH)
-- [ ] Video caching/offline playback
-- [ ] Buffer optimization
-- [ ] Memory management improvements
-
-### Q3 2026 - Advanced Controls
-- [ ] Subtitle/closed caption support
-- [ ] Multiple audio track selection
-- [ ] Playback history
-- [ ] Resume from last position
-
-### Q4 2026 - Social Features
-- [ ] Video reactions/comments overlay
-- [ ] Share timestamp links
-- [ ] Collaborative playlists
-- [ ] Watch party sync
-
 ## State Management
 
-neom_media_player uses the SINT framework (GetX replacement) for:
-- Reactive playback state (isPlaying, isInitialized)
+`neom_media_player` uses the SINT framework for:
+- Reactive playback state (`isPlaying`, `isInitialized`)
 - Controller lifecycle management
 - Global key registry for multiple players
 - Cross-widget communication
