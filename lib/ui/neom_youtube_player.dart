@@ -27,6 +27,15 @@ class NeomYoutubePlayer extends StatefulWidget {
   /// A host can provide its own visible transport controls.
   final bool showControls;
 
+  /// Keeps a visual mirror silent, including when global audio is unmuted.
+  /// The mute flag is applied before the native player can begin playback.
+  final bool forceMuted;
+
+  static bool resolveMuted({
+    required bool globallyMuted,
+    bool forceMuted = false,
+  }) => forceMuted || globallyMuted;
+
   /// Leaves keyboard focus with the native player's host, for example a VR rig.
   /// The WebView releases focus before [onControllerReady] and after app resume.
   /// This is opt-in and does not affect the browser player.
@@ -61,6 +70,7 @@ class NeomYoutubePlayer extends StatefulWidget {
     this.useHybridComposition = true,
     this.registerWithMediaController = true,
     this.showControls = true,
+    this.forceMuted = false,
     this.passiveFocus = false,
     this.onControllerReady,
     super.key,
@@ -86,8 +96,12 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
     WidgetsBinding.instance.addObserver(this);
     _initializePlayer();
     _muteSubscription = NeomVideoPlayer.isGlobalMuted.listen((muted) {
-      _webController?.setMuted(muted);
-      if (muted) {
+      final effectiveMuted = NeomYoutubePlayer.resolveMuted(
+        globallyMuted: muted,
+        forceMuted: widget.forceMuted,
+      );
+      _webController?.setMuted(effectiveMuted);
+      if (effectiveMuted) {
         controller?.mute();
       } else {
         controller?.unMute();
@@ -101,14 +115,20 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
 
     if (kIsWeb) {
       _webController = YoutubeWebController(
-        muted: NeomVideoPlayer.isGlobalMuted.value,
+        muted: NeomYoutubePlayer.resolveMuted(
+          globallyMuted: NeomVideoPlayer.isGlobalMuted.value,
+          forceMuted: widget.forceMuted,
+        ),
       );
     } else {
       controller = YoutubePlayerController(
         initialVideoId: videoId,
         flags: YoutubePlayerFlags(
           autoPlay: false,
-          mute: NeomVideoPlayer.isGlobalMuted.value,
+          mute: NeomYoutubePlayer.resolveMuted(
+            globallyMuted: NeomVideoPlayer.isGlobalMuted.value,
+            forceMuted: widget.forceMuted,
+          ),
           useHybridComposition: widget.useHybridComposition,
           hideControls: !widget.showControls,
         ),
@@ -134,6 +154,10 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
   }
 
   void _play() {
+    if (widget.forceMuted) {
+      controller?.mute();
+      _webController?.setMuted(true);
+    }
     NeomVideoPlayer.pauseAllExcept(null);
     for (final list in NeomYoutubePlayer._players.values) {
       for (final state in list) {
@@ -192,6 +216,7 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
 
   Future<void> _onNativeReady(YoutubePlayerController player) async {
     if (!_isCurrentController(player)) return;
+    if (widget.forceMuted) player.mute();
     if (widget.passiveFocus && !await _releaseNativeFocus(player)) return;
     if (!_isCurrentController(player)) return;
     _mediaController?.visibleVideoAction();
@@ -234,6 +259,7 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
     if (oldWidget.youtubeUrl != widget.youtubeUrl ||
         oldWidget.useHybridComposition != widget.useHybridComposition ||
         oldWidget.showControls != widget.showControls ||
+        oldWidget.forceMuted != widget.forceMuted ||
         oldWidget.passiveFocus != widget.passiveFocus ||
         oldWidget.registerWithMediaController !=
             widget.registerWithMediaController) {
@@ -263,7 +289,10 @@ class _NeomYoutubePlayerState extends State<NeomYoutubePlayer>
               aspectRatio: 16 / 9,
               child: buildYoutubeWebPlayer(
                 videoId: videoId,
-                muted: NeomVideoPlayer.isGlobalMuted.value,
+                muted: NeomYoutubePlayer.resolveMuted(
+                  globallyMuted: NeomVideoPlayer.isGlobalMuted.value,
+                  forceMuted: widget.forceMuted,
+                ),
                 controller: _webController!,
               ),
             )
